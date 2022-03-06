@@ -1,6 +1,13 @@
-import gzip
+import csv
 
-f = gzip.open("data/Data_API.csv.gz","rb").read()
+data = []
 
-print(f)
+with open("data/Data_API.csv","r") as fin:
+    reader = csv.reader(fin)
+    headers = next(reader)
+    data = [{h:x for (h,x) in zip(headers,row)} for row in reader]
+
+print(data[0]["Seller_address"])
+
+
 

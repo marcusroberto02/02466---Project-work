@@ -1,4 +1,5 @@
 import csv
+from enum import unique
 import sys
 
 maxInt = sys.maxsize
@@ -25,6 +26,8 @@ with open("data/Data_API.csv","r") as f:
 header = ["NFT_ID","Seller_address","Buyer_address"]
 N = 1000
 
+unique_sellers = set()
+
 with open("data/toyset.csv", 'w', encoding='UTF8', newline='') as f:
     writer = csv.writer(f)
 
@@ -32,11 +35,18 @@ with open("data/toyset.csv", 'w', encoding='UTF8', newline='') as f:
     writer.writerow(header)
 
     # write the data
-    for i in range(N):
-        writer.writerow([data[i]["Unique_id_collection"],data[i]["Seller_address"],data[i]["Buyer_address"]])
+    i = 0
+    while len(unique_sellers) < 1000 and i <= 1000000:
+        nft_id = data[i]["Unique_id_collection"]
+        seller_id = data[i]["Seller_address"]
+        buyer_id = data[i]["Buyer_address"]
+        unique_sellers.add(seller_id)
+        writer.writerow([nft_id,seller_id,buyer_id])
+        i += 1
+        if i % 1000 == 0:
+            print(i,len(unique_sellers))
 
 
-
-
+print(len(data))
 
 

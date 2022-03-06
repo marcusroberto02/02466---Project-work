@@ -3,4 +3,5 @@ print("Hello World!")
 print("kasper test")
 
 print("Marcus was here!")
-#MADS test2
+#MADS
+#Nu virker det fandme YES YES YES !!!! KASPER GIVER ØL

@@ -19,8 +19,7 @@ class Trader():
         np.delete(self.nfts,index)
         
         np.append(T2.nfts,nft_trade)
-    
-        
+             
         return nft_trade
         
 

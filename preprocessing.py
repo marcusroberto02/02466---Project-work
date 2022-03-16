@@ -1,7 +1,7 @@
 import csv
 from enum import unique
 import sys
-
+from itertools import islice
 maxInt = sys.maxsize
 
 while True:

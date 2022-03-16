@@ -16,9 +16,9 @@ class Trader():
         index = np.random.randint(0,len(self.nfts))
         nft_trade = self.nfts[index]
         
-        np.delete(self.nfts,index)
+        self.nfts = np.delete(self.nfts,index)
         
-        np.append(T2.nfts,nft_trade)
+        T2.nfts = np.append(T2.nfts,nft_trade)
              
         return nft_trade
         
@@ -51,7 +51,7 @@ Sellers = []
 traded_nfts = []
 buyers = []
 
-while len(Sellers) < 1000:
+while len(Sellers) < 100:
     T1 = np.random.randint(0,len(Traders))
     T2 = np.random.randint(0,len(Traders))
     while T2 == T1:
@@ -69,3 +69,8 @@ while len(Sellers) < 1000:
     
 df=pd.DataFrame({'Sellers': Sellers, 'NFTs':traded_nfts, 'Buyers':buyers})
     
+print(df)
+
+print(len(set(Sellers)))
+print(len(set(buyers)))
+#print(T2.nfts)

@@ -8,6 +8,8 @@ data/
 # Ignore the saved models
 model/
 
+.idea/
+
 # C extensions
 *.so
 

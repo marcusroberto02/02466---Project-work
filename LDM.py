@@ -27,10 +27,6 @@ else:
     torch.set_default_tensor_type('torch.FloatTensor')
  
     
-    
-
-    
-
 
 class LDM(nn.Module):
     def __init__(self,sparse_i,sparse_j, input_size,latent_dim,sample_size,non_sparse_i=None,non_sparse_j=None,sparse_i_rem=None,sparse_j_rem=None,scaling=None,norm_values=False):
@@ -65,7 +61,9 @@ class LDM(nn.Module):
         
         # PARAMETERS
         self.latent_z=nn.Parameter(torch.randn(self.input_size,latent_dim,device=device))
+        # define w for product embeddings
         self.gamma=nn.Parameter(torch.randn(self.input_size,device=device))
+        # define delta for product biases
 
 
     
@@ -128,11 +126,11 @@ class LDM(nn.Module):
                 
                 mat=torch.exp(-(torch.cdist(self.latent_z+1e-06,self.latent_z,p=2)+1e-06))
                 # Non-link N^2 likelihood term, i.e. \sum_ij lambda_ij
+                # for the bipartite case the diagonal part should be removed
+                # as well as the 1/2 term
                 z_pdist1=0.5*torch.mm(torch.exp(self.gamma.unsqueeze(0)),(torch.mm((mat-torch.diag(torch.diagonal(mat))),torch.exp(self.gamma).unsqueeze(-1))))
                 # log-Likehood link term i.e. \sum_ij y_ij*log(lambda_ij)
                 z_pdist2=(-((((self.latent_z[self.sparse_i_idx]-self.latent_z[self.sparse_j_idx]+1e-06)**2).sum(-1))**0.5)+self.gamma[self.sparse_i_idx]+self.gamma[self.sparse_j_idx]).sum()
-        
-               
 
                 # Total Log-likelihood
                 log_likelihood_sparse=z_pdist2-z_pdist1

@@ -63,6 +63,7 @@ class LDM(nn.Module):
         self.latent_z=nn.Parameter(torch.randn(self.input_size,latent_dim,device=device))
         # define w for product embeddings
         self.gamma=nn.Parameter(torch.randn(self.input_size,device=device))
+        self.delta=nn.Parameter(torch.randn(self.input_size))
         # define delta for product biases
 
 
@@ -199,14 +200,15 @@ for run in range(1,total_runs+1):
             # negative samples are actual pairs of y_ij=0 that we also try to predict to see how well we can order the rates of a connection
             
             # file denoting rows i of missing links, with i<j 
-            sparse_i_rem=torch.from_numpy(np.loadtxt(dataset+'/sparse_i_rem.txt')).long().to(device)
+            sparse_i_rem=None
             # file denoting columns j of missing links, with i<j
-            sparse_j_rem=torch.from_numpy(np.loadtxt(dataset+'/sparse_j_rem.txt')).long().to(device)
+            sparse_j_rem=None
             # file denoting negative sample rows i, with i<j
-            non_sparse_i=torch.from_numpy(np.loadtxt(dataset+'/non_sparse_i.txt')).long().to(device)
+            non_sparse_i=None
             # file denoting negative sample columns, with i<j
-            non_sparse_j=torch.from_numpy(np.loadtxt(dataset+'/non_sparse_j.txt')).long().to(device)
-            
+            non_sparse_j=None
+
+            sparse_data =
             # EDGELIST
             # input data, link rows i positions with i<j
             sparse_i=torch.from_numpy(np.loadtxt(dataset+'/sparse_i.txt')).long().to(device)

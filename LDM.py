@@ -98,7 +98,7 @@ class LDM(nn.Module):
         
         return sample_idx,sparse_i_sample,sparse_j_sample
         
-    
+    #
     
     #introducing the Poisson log-likelihood  
     def LSM_likelihood_bias(self,epoch):

@@ -27,10 +27,6 @@ else:
     torch.set_default_tensor_type('torch.FloatTensor')
  
     
-    
-
-    
-
 
 class LDM(nn.Module):
     def __init__(self,sparse_i,sparse_j, input_size,latent_dim,sample_size,non_sparse_i=None,non_sparse_j=None,sparse_i_rem=None,sparse_j_rem=None,scaling=None,norm_values=False):
@@ -65,7 +61,10 @@ class LDM(nn.Module):
         
         # PARAMETERS
         self.latent_z=nn.Parameter(torch.randn(self.input_size,latent_dim,device=device))
+        # define w for product embeddings
         self.gamma=nn.Parameter(torch.randn(self.input_size,device=device))
+        self.delta=nn.Parameter(torch.randn(self.input_size))
+        # define delta for product biases
 
 
     
@@ -98,7 +97,7 @@ class LDM(nn.Module):
         
         return sample_idx,sparse_i_sample,sparse_j_sample
         
-    
+    #
     
     #introducing the Poisson log-likelihood  
     def LSM_likelihood_bias(self,epoch):
@@ -128,11 +127,11 @@ class LDM(nn.Module):
                 
                 mat=torch.exp(-(torch.cdist(self.latent_z+1e-06,self.latent_z,p=2)+1e-06))
                 # Non-link N^2 likelihood term, i.e. \sum_ij lambda_ij
+                # for the bipartite case the diagonal part should be removed
+                # as well as the 1/2 term
                 z_pdist1=0.5*torch.mm(torch.exp(self.gamma.unsqueeze(0)),(torch.mm((mat-torch.diag(torch.diagonal(mat))),torch.exp(self.gamma).unsqueeze(-1))))
                 # log-Likehood link term i.e. \sum_ij y_ij*log(lambda_ij)
                 z_pdist2=(-((((self.latent_z[self.sparse_i_idx]-self.latent_z[self.sparse_j_idx]+1e-06)**2).sum(-1))**0.5)+self.gamma[self.sparse_i_idx]+self.gamma[self.sparse_j_idx]).sum()
-        
-               
 
                 # Total Log-likelihood
                 log_likelihood_sparse=z_pdist2-z_pdist1
@@ -201,14 +200,15 @@ for run in range(1,total_runs+1):
             # negative samples are actual pairs of y_ij=0 that we also try to predict to see how well we can order the rates of a connection
             
             # file denoting rows i of missing links, with i<j 
-            sparse_i_rem=torch.from_numpy(np.loadtxt(dataset+'/sparse_i_rem.txt')).long().to(device)
+            sparse_i_rem=None
             # file denoting columns j of missing links, with i<j
-            sparse_j_rem=torch.from_numpy(np.loadtxt(dataset+'/sparse_j_rem.txt')).long().to(device)
+            sparse_j_rem=None
             # file denoting negative sample rows i, with i<j
-            non_sparse_i=torch.from_numpy(np.loadtxt(dataset+'/non_sparse_i.txt')).long().to(device)
+            non_sparse_i=None
             # file denoting negative sample columns, with i<j
-            non_sparse_j=torch.from_numpy(np.loadtxt(dataset+'/non_sparse_j.txt')).long().to(device)
-            
+            non_sparse_j=None
+
+            sparse_data =
             # EDGELIST
             # input data, link rows i positions with i<j
             sparse_i=torch.from_numpy(np.loadtxt(dataset+'/sparse_i.txt')).long().to(device)

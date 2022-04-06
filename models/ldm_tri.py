@@ -88,24 +88,38 @@ class LDM(nn.Module):
             # exp(||l_i - u_k||)
             mat_lu=torch.exp(-(torch.cdist(self.latent_l+1e-06,self.latent_u,p=2)+1e-06))
             
-            # get term sum(exp(rho_i+nu_j+tau_k-||l_i - r_j||-||l_i - u_k||))
+            # get term sum(exp(rho_i+n_uj+tau_k-||l_i - r_j||-||l_i - u_k||))
             # rho_i: size N
             # nu_j: size S
             # tau_k: size B
             # mat_lr: size N x S
             # mat_lu: size N x B
+
+            # mat: N x S x B
+            # exp(rho_i+nu_j-||l_i - r_j||)*
+            
+
+            # sum(exp(rho_i+nu_j -||l_i - r_j||))
+            # sum(exp(rho_i+tau_k-||l_i - u_k||))
+            # (exp1 + exp2 + exp3 + exp4) * (exp1 + exp2 + exp3 + exp4)
+
+            # sum(exp(rho_i+n_uj+tau_k-||l_i - r_j||-||l_i - u_k||))
+
+
             N = self.nft_size
             S = self.seller_size
             B = self.buyer_size
             z_pdist1 = 0
             for i in range(N):
-                if i % 100 == 0:
-                    print(i,N,S,B)
                 for j in range(S):
                     for k in range(B):
                         # exp(rho_i+nu_j+tau_k-||l_i-r_k||-||l_i-u_k||)
                         z_pdist1 += torch.exp(self.rho[i]+self.nu[j]+self.tau[k]-mat_lr[i][j]-mat_lu[i][k])
             
+            temp = torch.mul(torch.exp(self.rho),torch.exp(self.nu))
+        
+            z_pdist1 = 0
+
             # log-Likehood link term i.e. \sum_ij y_ij*log(lambda_ij)
             zqdist_lr = -((((self.latent_l[self.sparse_i_idx]-self.latent_r[self.sparse_j_idx]+1e-06)**2).sum(-1))**0.5)
             zqdist_lu = -((((self.latent_l[self.sparse_i_idx]-self.latent_u[self.sparse_k_idx]+1e-06)**2).sum(-1))**0.5)

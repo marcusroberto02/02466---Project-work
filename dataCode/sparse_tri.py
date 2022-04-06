@@ -3,7 +3,7 @@ import pandas
 from scipy import sparse
 import numpy as np
 
-small_dataset = pandas.read_csv('../data/toy.csv')
+small_dataset = pandas.read_csv('./data/toy.csv')
 df = small_dataset
 
 #Creates an index for all of the NFTS
@@ -27,7 +27,7 @@ new_df.insert(2, "Buyer_idx", [Buyers_ids[Buyer[2]] for Buyer in new_df.index])
 print(new_df)
 input = input("Want to save file: y/n: ")
 if input == "y":
-    new_df.to_csv('../data/sparse_matrix_tri_toy.csv',index=None)
+    new_df.to_csv('./data/sparse_matrix_tri_toy.csv',index=None)
 
 
 # print("Unique Trader:", len(Trader_ids))

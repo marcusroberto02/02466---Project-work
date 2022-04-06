@@ -50,7 +50,7 @@ class LDM(nn.Module):
         self.latent_q=nn.Parameter(torch.randn(self.trader_size,latent_dim,device=device))
         # define bias terms
         self.gamma=nn.Parameter(torch.randn(self.nft_size,device=device))
-        self.delta=nn.Parameter(torch.randn(self.trader_size))
+        self.delta=nn.Parameter(torch.randn(self.trader_size,device=device))
 
     #introducing the Poisson log-likelihood  
     def LSM_likelihood_bias(self,epoch):
@@ -78,7 +78,7 @@ class LDM(nn.Module):
             log_likelihood_sparse=z_pdist2-z_pdist1
                             
         else:
-            # ||z_i - q_j||
+            # exp(||z_i - q_j||)
             mat=torch.exp(-(torch.cdist(self.latent_z+1e-06,self.latent_q,p=2)+1e-06))
             # Non-link N^2 likelihood term, i.e. \sum_ij lambda_ij
             # for the bipartite case the diagonal part should be removed

@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib as mpl
 
 
-data = pd.read_csv("data/toy.csv", index_col = 0)
+data = pd.read_csv("../data/toy.csv", index_col = 0)
 #data = pd.read_csv("data/Data_API.csv")
 
 seller_count = data.groupby('Seller_address').size().values

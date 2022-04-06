@@ -3,7 +3,7 @@ import pandas
 from scipy import sparse
 import numpy as np
 
-small_dataset = pandas.read_csv('data/toy.csv')
+small_dataset = pandas.read_csv('../data/toy.csv')
 df = small_dataset
 
 #Creates an index for all of the NFTS

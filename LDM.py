@@ -35,7 +35,6 @@ class LDM(nn.Module):
        
         self.latent_dim=latent_dim
         
-        
         self.scaling=1
         #create indices to index properly the receiver and senders variable
         self.sparse_i_idx=sparse_i

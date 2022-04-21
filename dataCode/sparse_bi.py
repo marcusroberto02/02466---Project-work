@@ -3,8 +3,10 @@ import pandas
 from scipy import sparse
 import numpy as np
 
-small_dataset = pandas.read_csv('../data/toy.csv')
+small_dataset = pandas.read_csv('./data/small_toy_data_set.csv')
 df = small_dataset
+
+print
 
 #Creates an index for all of the NFTS
 NFT_ids = {NFT : i for i, NFT in enumerate(dict.fromkeys(df.iloc[:,3]).keys())}
@@ -23,8 +25,10 @@ new_df.insert(1,"Trader_idx",[Trader_ids[Trader[1]] for Trader in new_df.index])
 
 input = input("Want to save file: y/n: ")
 if input == "y":
-    new_df.to_csv('data/sparse_matrix_bi_toy.csv',index=None)
-print(new_df[new_df['count']>1])
+    new_df.to_csv('data/sparse_bi/sparse_matrix_bi_toy.csv',index=None)
+    new_df["NFT_idx"].to_csv('./data/sparse_bi/sparse_i.txt',header=None,index=None)
+    new_df["Trader_idx"].to_csv('./data/sparse_bi/sparse_j.txt',header=None,index=None)
+    new_df["count"].to_csv('./data/sparse_bi/sparse_w.txt',header=None,index=None)
 
 # print("Unique Trader:", len(Trader_ids))
 # print("Unique NFTS:", len(NFT_ids))

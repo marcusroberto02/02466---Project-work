@@ -24,15 +24,15 @@ else:
 # i corresponds to NFT's
 # j corresponds to traders
 
-class LDM(nn.Module):
-    def __init__(self,sparse_i,sparse_j,sparse_w,nft_size,trader_size,latent_dim):
-        super(LDM, self).__init__()
+class LDM_BI(nn.Module):
+    def __init__(self,sparse_i,sparse_j,sparse_w,nft_size,trader_size,latent_dim,nft_sample_size,trader_sample_size):
+        super(LDM_BI, self).__init__()
         # input sizes
         self.nft_size = nft_size
         self.trader_size = trader_size
         # dimension D of embeddings
         self.latent_dim=latent_dim
-
+        
         # scaling term
         self.scaling=0
         
@@ -42,6 +42,13 @@ class LDM(nn.Module):
         self.weights = sparse_w
 
         self.Softmax=nn.Softmax(1)
+        
+        #
+        self.sampling_weights_nfts = torch.ones(self.nft_size,device = device)
+        self.sampling_weights_traders=torch.ones(self.trader_size,device = device)
+        self.nft_sample_size=nft_sample_size
+        self.trader_sample_size =trader_sample_size
+
 
         # PARAMETERS
         # nft embeddings
@@ -90,13 +97,50 @@ class LDM(nn.Module):
             z_pdist1=torch.mm(torch.mm(torch.exp(self.gamma.unsqueeze(0)),mat),torch.exp(self.delta.unsqueeze(-1)))
             # log-Likehood link term i.e. \sum_ij y_ij*log(lambda_ij)
             zqdist = -((((self.latent_z[self.sparse_i_idx]-self.latent_q[self.sparse_j_idx]+1e-06)**2).sum(-1))**0.5)
-            z_pdist2=(self.weights*(self.gamma[self.sparse_i_idx]+self.delta[self.sparse_j_idx]-zqdist)).sum()
+            z_pdist2=(self.weights*(self.gamma[self.sparse_i_idx]+self.delta[self.sparse_j_idx]+zqdist)).sum()
 
             # Total Log-likelihood
             log_likelihood_sparse=z_pdist2-z_pdist1
     
     
         return log_likelihood_sparse
+
+    def sample_network(self):
+        '''
+        Network Sampling procecdure used for large scale networks
+        '''
+        # USE torch_sparse lib i.e. : from torch_sparse import spspmm
+
+        # sample for undirected network
+        sample_idx_nfts=torch.multinomial(self.sampling_weights_nfts, self.nft_sample_size,replacement=False)
+        sample_idx_traders=torch.multinomial(self.sampling_weights_traders, self.trader_sample_size,replacement=False)
+        # translate sampled indices w.r.t. to the full matrix, it is just a diagonal matrix
+        indices_translator=torch.cat([sample_idx_nfts.unsqueeze(0),sample_idx_traders.unsqueeze(0)],0)
+        # adjacency matrix in edges format
+        edges=torch.cat([self.sparse_i_idx.unsqueeze(0),self.sparse_j_idx.unsqueeze(0)],0)
+        # matrix multiplication B = Adjacency x Indices translator
+        # see spspmm function, it give a multiplication between two matrices
+        # indexC is the indices where we have non-zero values and valueC the actual values (in this case ones)
+        # her føler jeg at vi får et problem
+        # self.input_size står 3 gange
+        # hvad gør spspmmm
+        # tror jeg forstår det
+        # den første er antallet af nft.
+        # den anden er antallet af handler
+        # den tredje er antallet af traders
+        indexC, valueC = spspmm(edges,torch.ones(edges.shape[1]), indices_translator,torch.ones(indices_translator.shape[1]),self.nft_size,self.sample_size,self.trader_size,coalesced=True)
+        # second matrix multiplication C = Indices translator x B, indexC returns where we have edges inside the sample
+        indexC, valueC=spspmm(indices_translator,torch.ones(indices_translator.shape[1]),indexC,valueC,self.input_size,self.input_size,self.input_size,coalesced=True)
+        
+        # edge row position
+        sparse_i_sample=indexC[0,:]
+        # edge column position
+        sparse_j_sample=indexC[1,:]
+     
+        
+        return sample_idx_nfts,sample_idx_traders, sparse_i_sample,sparse_j_sample
+        
+    #
     
     
     
@@ -112,11 +156,11 @@ torch.autograd.set_detect_anomaly(True)
 # Number of latent communities
 latent_dims=[2]
 # Total model iterations
-total_epochs=100
+total_epochs=4
 # Initial iterations for scaling the random effects
 scaling_it=2000
 # Dataset Name
-dataset='data/sparse_matrix_bi_toy.csv'
+dataset='data/sparse_bi'
 # Learning rates
 lrs=[0.1]
 # Total independent runs of the model
@@ -130,20 +174,18 @@ for run in range(1,total_runs+1):
         for lr in lrs:
             print('Learning rate: ',lr)
 
-            sparse_data = pandas.read_csv(dataset)
-            # EDGELIST
-            # nft input
-            sparse_i=torch.from_numpy(sparse_data["NFT_idx"].to_numpy()).long().to(device)
-            # trader input
-            sparse_j=torch.from_numpy(sparse_data["Trader_idx"].to_numpy()).long().to(device)
-            # weight input
-            sparse_w=torch.from_numpy(sparse_data["count"].to_numpy()).long().to(device)
+            # nft items
+            sparse_i=torch.from_numpy(np.loadtxt(dataset+'/sparse_i.txt')).long().to(device)
+            # traders
+            sparse_j=torch.from_numpy(np.loadtxt(dataset+'/sparse_j.txt')).long().to(device)
+            # weight items
+            sparse_w=torch.from_numpy(np.loadtxt(dataset+'/sparse_w.txt')).long().to(device)
             # network size
             N=int(sparse_i.max()+1)
             T=int(sparse_j.max()+1)
             
             # initialize model
-            model = LDM(sparse_i=sparse_i,sparse_j=sparse_j,sparse_w=sparse_w,nft_size=N,trader_size=T,latent_dim=latent_dim).to(device)         
+            model = LDM_BI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_w=sparse_w,nft_size=N,trader_size=T,latent_dim=latent_dim,nft_sample_size=1,trader_sample_size=1).to(device)         
 
             optimizer = optim.Adam(model.parameters(), lr=lr)  
     
@@ -175,13 +217,11 @@ for run in range(1,total_runs+1):
             z = model.latent_z.detach().numpy()
             zx = [el[0] for el in z]
             zy = [el[1] for el in z]
-            plt.scatter(zx,zy)
+            plt.scatter(zx,zy,s=1)
             # trader
             q = model.latent_q.detach().numpy()
             qx = [el[0] for el in q]
             qy = [el[1] for el in q]
-            plt.scatter(qx,qy)
+            plt.scatter(qx,qy,s=1)
             plt.show()
         
-
-

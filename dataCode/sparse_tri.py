@@ -11,18 +11,18 @@ NFT_ids = {NFT : i for i, NFT in enumerate(dict.fromkeys(df['Unique_id_collectio
 #Creates an index for all of the Sellers
 Seller_ids = {Seller : i for i, Seller in enumerate(dict.fromkeys(df['Seller_address']).keys())}
 #Creates an index for all of the Buyers
-Buyers_ids = {Buyer : i for i, Buyer in enumerate(dict.fromkeys(df['Buyer_address']).keys())}
+Buyer_ids = {Buyer : i for i, Buyer in enumerate(dict.fromkeys(df['Buyer_address']).keys())}
 
 #Pairs trades
-new_df = pandas.DataFrame({'groups': list(zip(df['Seller_address'],df['Unique_id_collection'],df['Buyer_address'])),'count': 1})
+new_df = pandas.DataFrame({'groups': list(zip(df['Unique_id_collection'],df['Seller_address'],df['Buyer_address'])),'count': 1})
 print(new_df.shape)
 #Removes dublicate trades and increments counter
 new_df = new_df.groupby('groups').sum()
 print(new_df.shape)
-#Creates new columns with the respective ids for the traders and nfts
-new_df.insert(0,"Seller_idx",[Seller_ids[Seller[0]] for Seller in new_df.index])
-new_df.insert(1,"NFT_idx",[NFT_ids[NFT[1]] for NFT in new_df.index])
-new_df.insert(2, "Buyer_idx", [Buyers_ids[Buyer[2]] for Buyer in new_df.index])
+#Creates new columns with the respective ids for the nfts, sellers and buyers
+new_df.insert(0,"NFT_idx",[NFT_ids[NFT[0]] for NFT in new_df.index])
+new_df.insert(1,"Seller_idx",[Seller_ids[Seller[1]] for Seller in new_df.index])
+new_df.insert(2, "Buyer_idx", [Buyer_ids[Buyer[2]] for Buyer in new_df.index])
 
 print(new_df)
 input = input("Want to save file: y/n: ")
@@ -33,8 +33,9 @@ if input == "y":
     new_df["count"].to_csv('./data/sparse_tri/sparse_w.txt',header=None,index=None)
 
 
-# print("Unique Trader:", len(Trader_ids))
-# print("Unique NFTS:", len(NFT_ids))
+print("Unique Trader:", len(Seller_ids))
+print("Unique Buyers:", len(Buyer_ids))
+print("Unique NFTS:", len(NFT_ids))
 # print("Check in new_df:")
 # print(len(new_df['NFT_idx']))
 # print(len(new_df['Trader_idx']))

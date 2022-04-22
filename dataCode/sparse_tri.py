@@ -3,7 +3,9 @@ import pandas
 from scipy import sparse
 import numpy as np
 
-small_dataset = pandas.read_csv('./data/small_toy_data_set.csv')
+path = 'C:/Users/khelp/OneDrive/Desktop/4. semester/Fagprojekt/02466---Project-work/'
+
+small_dataset = pandas.read_csv(path + 'data/small_dataset.csv')
 df = small_dataset
 
 #Creates an index for all of the NFTS
@@ -12,9 +14,12 @@ NFT_ids = {NFT : i for i, NFT in enumerate(dict.fromkeys(df['Unique_id_collectio
 Seller_ids = {Seller : i for i, Seller in enumerate(dict.fromkeys(df['Seller_address']).keys())}
 #Creates an index for all of the Buyers
 Buyer_ids = {Buyer : i for i, Buyer in enumerate(dict.fromkeys(df['Buyer_address']).keys())}
+#Creates an index for all of the categories
+Category_ids = {Category : i for i, Category in enumerate(dict.fromkeys(df['Category']).keys())}
+
 
 #Pairs trades
-new_df = pandas.DataFrame({'groups': list(zip(df['Unique_id_collection'],df['Seller_address'],df['Buyer_address'])),'count': 1})
+new_df = pandas.DataFrame({'groups': list(zip(df['Unique_id_collection'],df['Seller_address'],df['Buyer_address'], df['Category'])),'count': 1})
 print(new_df.shape)
 #Removes dublicate trades and increments counter
 new_df = new_df.groupby('groups').sum()
@@ -23,19 +28,22 @@ print(new_df.shape)
 new_df.insert(0,"NFT_idx",[NFT_ids[NFT[0]] for NFT in new_df.index])
 new_df.insert(1,"Seller_idx",[Seller_ids[Seller[1]] for Seller in new_df.index])
 new_df.insert(2, "Buyer_idx", [Buyer_ids[Buyer[2]] for Buyer in new_df.index])
+new_df.insert(3, "Category_idx", [Category_ids[Category[3]] for Category in new_df.index])
 
 print(new_df)
 input = input("Want to save file: y/n: ")
 if input == "y":
-    new_df["NFT_idx"].to_csv('./data/sparse_tri/sparse_i.txt',header=None,index=None)
-    new_df["Seller_idx"].to_csv('./data/sparse_tri/sparse_j.txt',header=None,index=None)
-    new_df["Buyer_idx"].to_csv('./data/sparse_tri/sparse_k.txt',header=None,index=None)
-    new_df["count"].to_csv('./data/sparse_tri/sparse_w.txt',header=None,index=None)
+    new_df["NFT_idx"].to_csv(path + 'data/sparse_tri/sparse_i.txt',header=None,index=None)
+    new_df["Seller_idx"].to_csv(path +'data/sparse_trisparse_j.txt',header=None,index=None)
+    new_df["Buyer_idx"].to_csv(path + 'data/sparse_tri/sparse_k.txt',header=None,index=None)
+    new_df["Category_idx"].to_csv(path + 'data/sparse_tri/sparse_v.txt',header=None,index=None)
+    new_df["count"].to_csv(path + 'data/sparse_tri/sparse_w.txt',header=None,index=None)
 
 
 print("Unique Trader:", len(Seller_ids))
 print("Unique Buyers:", len(Buyer_ids))
 print("Unique NFTS:", len(NFT_ids))
+print("Unique Categories:", len(Category_ids))
 # print("Check in new_df:")
 # print(len(new_df['NFT_idx']))
 # print(len(new_df['Trader_idx']))

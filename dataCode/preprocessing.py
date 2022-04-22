@@ -16,11 +16,12 @@ while True:
 
 data = []
 
-with open("../data/Data_API.csv", "r") as f:
+with open("./data/Data_API.csv", "r") as f:
     reader = csv.reader(f)
     headers = next(reader)
     data = [{h:x for (h,x) in zip(headers,row)} for row in reader]
 
+print(data[0])
 
 # create toy data set:
 header = ["NFT_ID","Seller_address","Buyer_address"]
@@ -28,7 +29,7 @@ N = 1000
 
 unique_sellers = set()
 
-with open("../data/toyset.csv", 'w', encoding='UTF8', newline='') as f:
+with open("../data/toyset2.csv", 'w', encoding='UTF8', newline='') as f:
     writer = csv.writer(f)
 
     # write the header

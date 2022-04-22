@@ -35,7 +35,6 @@ class LDM(nn.Module):
        
         self.latent_dim=latent_dim
         
-        
         self.scaling=1
         #create indices to index properly the receiver and senders variable
         self.sparse_i_idx=sparse_i
@@ -208,7 +207,7 @@ for run in range(1,total_runs+1):
             # file denoting negative sample columns, with i<j
             non_sparse_j=None
 
-
+            sparse_data =
             # EDGELIST
             # input data, link rows i positions with i<j
             sparse_i=torch.from_numpy(np.loadtxt(dataset+'/sparse_i.txt')).long().to(device)

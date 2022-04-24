@@ -212,6 +212,7 @@ for run in range(1,total_runs+1):
             plt.scatter(ux,uy,s=10)
             plt.show()
             """
+<<<<<<< HEAD
 
 #################################################################
 '''
@@ -271,7 +272,15 @@ for i in u_labels:
     plt.scatter(df[label == i, 0], df[label == i, 1], s=10, c=np.random.rand(3,), label='cluster %d' % i)
 plt.legend()
 plt.show()
+=======
+>>>>>>> 1ddf7fd26271e9ad88b7dbb328d5bcabb2100e78
 
 
 
 
+<<<<<<< HEAD
+=======
+
+
+
+>>>>>>> 1ddf7fd26271e9ad88b7dbb328d5bcabb2100e78

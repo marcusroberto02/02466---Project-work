@@ -3,7 +3,11 @@ import pandas as pd
 from scipy import sparse
 import numpy as np
 
-df = pd.read_csv('./data/small_toy_data_set.csv')[["Unique_id_collection","Seller_address","Buyer_address","Category"]]
+# path to data folder
+data_path = "./data/"
+dataset = "small_toy_data_set.csv"
+
+df = pd.read_csv(data_path + dataset)[["Unique_id_collection","Seller_address","Buyer_address","Category"]]
 
 # combine seller and buyer address into traders
 data_dict = {"Unique_id_collection" : df["Unique_id_collection"]+df["Unique_id_collection"],
@@ -19,13 +23,12 @@ df = df.groupby(["Unique_id_collection","Trader_address","Category"]).size().res
 # rename count column
 df.columns = ["Unique_id_collection","Trader_address","Category","Count"]
 
-input = input("Want to save file: y/n: ")
-if input == "y":
-    df["Unique_id_collection"].to_csv('./data/sparse_bi/sparse_i.txt',header=None,index=None)
-    df["Trader_address"].to_csv('./data/sparse_bi/sparse_j.txt',header=None,index=None)
-    df["Count"].to_csv('./data/sparse_bi/sparse_w.txt',header=None,index=None)
+# save files
+df["Unique_id_collection"].to_csv(data_path + 'sparse_bi/sparse_i.txt',header=None,index=None)
+df["Trader_address"].to_csv(data_path + 'sparse_bi/sparse_j.txt',header=None,index=None)
+df["Count"].to_csv(data_path + 'sparse_bi/sparse_w.txt',header=None,index=None)
 
-print("Unique Traders:", len(set(df["Trader_address"])))
-print("Unique NFTS:", len(set(df["Unique_id_collection"])))
-print("Unique categories", len(set(df["Category"])))
+#print("Unique Traders:", len(set(df["Trader_address"])))
+#print("Unique NFTS:", len(set(df["Unique_id_collection"])))
+#print("Unique categories", len(set(df["Category"])))
 

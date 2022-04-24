@@ -234,7 +234,7 @@ logreg = lm.LogisticRegression(solver='lbfgs', multi_class='multinomial', random
 logreg.fit(X_train, y_train)
 
 #Metrics
-print('Number of miss-classifications for Multinomial regression:\n\t {0} out of {1}'.format(np.sum(logreg.predict(X_test)!=y_test),len(y_test)))
+print('Number of miss-classifications for Multinomial regression:\n\t {0} out of {1}'.format(np.sum(logreg.predict(X_test)!=y_test), len(y_test)))
 print('Accuracy for Multinomial regression:\n\t {0}'.format(logreg.score(X_test, y_test)))
 print('Confusion matrix for Multinomial regression:\n\t {0}'.format(confusion_matrix(y_test, logreg.predict(X_test))))
 print('ROC AUC for Multinomial regression:\n\t {0}'.format(roc_auc_score(y_test, logreg.predict(X_test))))
@@ -254,8 +254,6 @@ print('Confusion matrix for KNN:\n\t {0}'.format(confusion_matrix(y_test, knn.pr
 print('ROC AUC for KNN:\n\t {0}'.format(roc_auc_score(y_test, knn.predict(X_test))))
 print('Precision for KNN:\n\t {0}'.format(precision_score(y_test, knn.predict(X_test))))
 print('Recall for KNN:\n\t {0}'.format(recall_score(y_test, knn.predict(X_test))))
-
-
 
 
 #################################################################

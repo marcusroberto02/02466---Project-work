@@ -70,60 +70,41 @@ class LDM_TRI(nn.Module):
         
         '''
         self.epoch=epoch
+        
+        # distance matrix for seller and NFT embeddings
+        # dimension is S x N
+        # NB! Important that the nft size is the second dimension
+        d_rl = torch.cdist(self.latent_r+1e-06,self.latent_l,p=2)+1e-06
+        
+        # distance matrix for buyer and NFT embeddings
+        # dimension is B x N
+        d_ul = torch.cdist(self.latent_u+1e-06,self.latent_l,p=2)+1e-06
+        
+        # calculate seller and nft non link part
+        # dimension is S x N
+        non_link_rl = torch.exp(self.nu.unsqueeze(1)-d_rl)
 
-        if self.scaling:
-            
-            # Optimize only the random effects initially so proper scaling i.e. the rate now is only l_ij=exp(a_i+b_j)
-            # gamma matrix
-            mat_gamma=torch.exp(torch.zeros(self.nft_size,self.nft_size)+1e-06)
-            mat_delta=torch.exp(torch.zeros(self.nft_size,self.nft_size)+1e-06)
+        # calculate seller and nft non link part
+        # dimension is B x N
+        non_link_ul = torch.exp(self.rho+self.tau.unsqueeze(1)-d_ul)
 
-            #exp(gamma)*exp(delta)=exp(gamma+delta)
+        # total non link matrix
+        # dimension is S x B x N
+        # S x 1 x N * B x N = S x B x N
+        total_non_link = non_link_rl.unsqueeze(1) * non_link_ul
 
-            # Non-link N^2 likelihood term, i.e. \sum_ij lambda_ij
-            z_pdist1=torch.mm(torch.exp(self.gamma.unsqueeze(0)),(torch.mm((mat-torch.diag(torch.diagonal(mat))),torch.exp(self.gamma).unsqueeze(-1))))
-            # log-Likehood link term i.e. \sum_ij y_ij*log(lambda_ij)
-            zqdist = -((((self.latent_z[self.sparse_i_idx]-self.latent_q[self.sparse_j_idx]+1e-06)**2).sum(-1))**0.5)
-            z_pdist2=(self.weights*(self.gamma[self.sparse_i_idx]+self.delta[self.sparse_j_idx]+zqdist)).sum()
-    
-            log_likelihood_sparse=z_pdist2-z_pdist1
-                            
-        else:
-            # distance matrix for seller and NFT embeddings
-            # dimension is S x N
-            # NB! Important that the nft size is the second dimension
-            d_rl = torch.cdist(self.latent_r+1e-06,self.latent_l,p=2)+1e-06
-            
-            # distance matrix for buyer and NFT embeddings
-            # dimension is B x N
-            d_ul = torch.cdist(self.latent_u+1e-06,self.latent_l,p=2)+1e-06
-            
-            # calculate seller and nft non link part
-            # dimension is S x N
-            non_link_rl = torch.exp(self.nu.unsqueeze(1)-d_rl)
+        # sum over values to get z_pdist1
+        z_pdist1 = torch.sum(total_non_link)
 
-            # calculate seller and nft non link part
-            # dimension is B x N
-            non_link_ul = torch.exp(self.rho+self.tau.unsqueeze(1)-d_ul)
+        # log-Likehood link term i.e. \sum_ij y_ij*log(lambda_ij)
+        zqdist_lr = -((((self.latent_l[self.sparse_i_idx]-self.latent_r[self.sparse_j_idx]+1e-06)**2).sum(-1))**0.5)
+        zqdist_lu = -((((self.latent_l[self.sparse_i_idx]-self.latent_u[self.sparse_k_idx]+1e-06)**2).sum(-1))**0.5)
+        sum_bias = self.rho[self.sparse_i_idx]+self.nu[self.sparse_j_idx]+self.tau[self.sparse_k_idx]
+        z_pdist2=(self.weights*(sum_bias+zqdist_lr+zqdist_lu)).sum()
 
-            # total non link matrix
-            # dimension is S x B x N
-            # S x 1 x N * B x N = S x B x N
-            total_non_link = non_link_rl.unsqueeze(1) * non_link_ul
-
-            # sum over values to get z_pdist1
-            z_pdist1 = torch.sum(total_non_link)
-
-            # log-Likehood link term i.e. \sum_ij y_ij*log(lambda_ij)
-            zqdist_lr = -((((self.latent_l[self.sparse_i_idx]-self.latent_r[self.sparse_j_idx]+1e-06)**2).sum(-1))**0.5)
-            zqdist_lu = -((((self.latent_l[self.sparse_i_idx]-self.latent_u[self.sparse_k_idx]+1e-06)**2).sum(-1))**0.5)
-            sum_bias = self.rho[self.sparse_i_idx]+self.nu[self.sparse_j_idx]+self.tau[self.sparse_k_idx]
-            z_pdist2=(self.weights*(sum_bias+zqdist_lr+zqdist_lu)).sum()
-
-            # Total Log-likelihood
-            log_likelihood_sparse=z_pdist2-z_pdist1
-    
-    
+        # Total Log-likelihood
+        log_likelihood_sparse=z_pdist2-z_pdist1
+        
         return log_likelihood_sparse
     
     
@@ -196,8 +177,6 @@ for run in range(1,total_runs+1):
                 loss=-model.LSM_likelihood_bias(epoch=epoch)
                 losses.append(loss.item())
                 
-         
-             
                 optimizer.zero_grad() # clear the gradients.   
                 loss.backward() # backpropagate
                 optimizer.step() # update the weights
@@ -232,10 +211,7 @@ for run in range(1,total_runs+1):
             uy = [el[1] for el in u]
             plt.scatter(ux,uy,s=10)
             plt.show()
-<<<<<<< HEAD
             """
-        
-=======
 
 #################################################################
 '''
@@ -295,14 +271,3 @@ for i in u_labels:
     plt.scatter(df[label == i, 0], df[label == i, 1], s=10, c=np.random.rand(3,), label='cluster %d' % i)
 plt.legend()
 plt.show()
-
-
-
-
-
-
-
-
->>>>>>> 2b2ecd52e840b7b0fdcf13925ea48eaa10de762c
-
-

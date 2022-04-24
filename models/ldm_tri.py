@@ -102,6 +102,7 @@ class LDM_TRI(nn.Module):
 
             # total non link matrix
             # dimension is S x B x N
+            # S x 1 x N * B x N = S x B x N
             total_non_link = non_link_rl.unsqueeze(1) * non_link_ul
 
             # sum over values to get z_pdist1
@@ -137,11 +138,13 @@ total_epochs=2
 # Initial iterations for scaling the random effects
 scaling_it=2000
 # Dataset Name
-dataset='data/sparse_tri'
+dataset='/zhome/45/e/155478/Desktop/02466---Project-work/data/sparse_tri'
 # Learning rates
 lrs=[0.1]
 # Total independent runs of the model
 total_runs=1
+# path to results folder
+results_path = "/zhome/45/e/155478/Desktop/02466---Project-work/results"
 
 for run in range(1,total_runs+1):
     for latent_dim in latent_dims:
@@ -192,9 +195,22 @@ for run in range(1,total_runs+1):
                 optimizer.zero_grad() # clear the gradients.   
                 loss.backward() # backpropagate
                 optimizer.step() # update the weights
-            
+
+            # save bias terms
+            torch.save(model.rho.detach().cpu(),results_path + "/nft_biases")
+            torch.save(model.nu.detach().cpu(),results_path + "/seller_biases")
+            torch.save(model.tau.detach().cpu(),results_path + "/buyer_biases")
+
+            # save embeddings
+            torch.save(model.latent_l.detach().cpu(),results_path + "/nft_embeddings")
+            torch.save(model.latent_r.detach().cpu(),results_path + "/seller_embeddings")
+            torch.save(model.latent_u.detach().cpu(),results_path + "/buyer_embeddings")
+
+
+
             # plot in latent space
             # nft
+            """
             l = model.latent_l.detach().numpy()
             lx = [el[0] for el in l]
             ly = [el[1] for el in l]
@@ -210,6 +226,7 @@ for run in range(1,total_runs+1):
             uy = [el[1] for el in u]
             plt.scatter(ux,uy,s=10)
             plt.show()
+            """
         
 
 

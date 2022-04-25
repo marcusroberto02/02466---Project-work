@@ -65,42 +65,26 @@ class LDM_BI(nn.Module):
         Poisson log-likelihood ignoring the log(k!) constant
         
         '''
-        self.epoch=epoch
+        self.epoch=epoch   
 
-        if self.scaling:
-            
-            # Optimize only the random effects initially so proper scaling i.e. the rate now is only l_ij=exp(a_i+b_j)
-            # gamma matrix
-            mat_gamma=torch.exp(torch.zeros(self.nft_size,self.nft_size)+1e-06)
-            mat_delta=torch.exp(torch.zeros(self.nft_size,self.nft_size)+1e-06)
-
-            #exp(gamma)*exp(delta)=exp(gamma+delta)
-
-            # Non-link N^2 likelihood term, i.e. \sum_ij lambda_ij
-            z_pdist1=torch.mm(torch.exp(self.gamma.unsqueeze(0)),(torch.mm((mat-torch.diag(torch.diagonal(mat))),torch.exp(self.gamma).unsqueeze(-1))))
-            # log-Likehood link term i.e. \sum_ij y_ij*log(lambda_ij)
-            zqdist = -((((self.latent_z[self.sparse_i_idx]-self.latent_q[self.sparse_j_idx]+1e-06)**2).sum(-1))**0.5)
-            z_pdist2=(self.weights*(self.gamma[self.sparse_i_idx]+self.delta[self.sparse_j_idx]-zqdist)).sum()
-    
-            log_likelihood_sparse=z_pdist2-z_pdist1
+        self.sparse_i_idx, self.sparse_j_idx = self.sample_network()
                             
-        else:
-            # exp(||z_i - q_j||)
-            mat=torch.exp(-(torch.cdist(self.latent_z+1e-06,self.latent_q,p=2)+1e-06))
-            # Non-link N^2 likelihood term, i.e. \sum_ij lambda_ij
-            # for the bipartite case the diagonal part should be removed
-            # as well as the 1/2 term
-            # exp(gamma)*exp(delta)*exp(mat)
+        # exp(||z_i - q_j||)
+        mat=torch.exp(-(torch.cdist(self.latent_z+1e-06,self.latent_q,p=2)+1e-06))
+        # Non-link N^2 likelihood term, i.e. \sum_ij lambda_ij
+        # for the bipartite case the diagonal part should be removed
+        # as well as the 1/2 term
+        # exp(gamma)*exp(delta)*exp(mat)
 
-            # spar
+        # spar
 
-            z_pdist1=torch.mm(torch.mm(torch.exp(self.gamma.unsqueeze(0)),mat),torch.exp(self.delta.unsqueeze(-1)))
-            # log-Likehood link term i.e. \sum_ij y_ij*log(lambda_ij)
-            zqdist = -((((self.latent_z[self.sparse_i_idx]-self.latent_q[self.sparse_j_idx]+1e-06)**2).sum(-1))**0.5)
-            z_pdist2=(self.weights*(self.gamma[self.sparse_i_idx]+self.delta[self.sparse_j_idx]+zqdist)).sum()
+        z_pdist1=torch.mm(torch.mm(torch.exp(self.gamma.unsqueeze(0)),mat),torch.exp(self.delta.unsqueeze(-1)))
+        # log-Likehood link term i.e. \sum_ij y_ij*log(lambda_ij)
+        zqdist = -((((self.latent_z[self.sparse_i_idx]-self.latent_q[self.sparse_j_idx]+1e-06)**2).sum(-1))**0.5)
+        z_pdist2=(self.weights*(self.gamma[self.sparse_i_idx]+self.delta[self.sparse_j_idx]+zqdist)).sum()
 
-            # Total Log-likelihood
-            log_likelihood_sparse=z_pdist2-z_pdist1
+        # Total Log-likelihood
+        log_likelihood_sparse=z_pdist2-z_pdist1
     
     
         return log_likelihood_sparse
@@ -113,32 +97,22 @@ class LDM_BI(nn.Module):
 
         # sample for undirected network
         sample_idx_nfts=torch.multinomial(self.sampling_weights_nfts, self.nft_sample_size,replacement=False)
-        sample_idx_traders=torch.multinomial(self.sampling_weights_traders, self.trader_sample_size,replacement=False)
         # translate sampled indices w.r.t. to the full matrix, it is just a diagonal matrix
-        indices_translator=torch.cat([sample_idx_nfts.unsqueeze(0),sample_idx_traders.unsqueeze(0)],0)
+        indices_translator=torch.cat([sample_idx_nfts.unsqueeze(0),sample_idx_nfts.unsqueeze(0)],0)
         # adjacency matrix in edges format
         edges=torch.cat([self.sparse_i_idx.unsqueeze(0),self.sparse_j_idx.unsqueeze(0)],0)
         # matrix multiplication B = Adjacency x Indices translator
-        # see spspmm function, it give a multiplication between two matrices
-        # indexC is the indices where we have non-zero values and valueC the actual values (in this case ones)
-        # her føler jeg at vi får et problem
-        # self.input_size står 3 gange
-        # hvad gør spspmmm
-        # tror jeg forstår det
-        # den første er antallet af nft.
-        # den anden er antallet af handler
-        # den tredje er antallet af traders
-        indexC, valueC = spspmm(edges,torch.ones(edges.shape[1]), indices_translator,torch.ones(indices_translator.shape[1]),self.nft_size,self.sample_size,self.trader_size,coalesced=True)
+        indexC, valueC = spspmm(edges,torch.ones(edges.shape[1]), indices_translator,torch.ones(indices_translator.shape[1]),self.nft_size,self.nft_size,self.nft_size,coalesced=True)
         # second matrix multiplication C = Indices translator x B, indexC returns where we have edges inside the sample
-        indexC, valueC=spspmm(indices_translator,torch.ones(indices_translator.shape[1]),indexC,valueC,self.input_size,self.input_size,self.input_size,coalesced=True)
+        indexC, valueC = spspmm(indices_translator,torch.ones(indices_translator.shape[1]),indexC,valueC,self.nft_size,self.nft_size,self.nft_size,coalesced=True)
         
         # edge row position
-        sparse_i_sample=indexC[0,:]
+        sparse_nfts_sample=indexC[0,:]
         # edge column position
-        sparse_j_sample=indexC[1,:]
+        sparse_traders_sample=indexC[1,:]
      
         
-        return sample_idx_nfts,sample_idx_traders, sparse_i_sample,sparse_j_sample
+        return sparse_nfts_sample,sparse_traders_sample
         
     #
     
@@ -156,7 +130,7 @@ torch.autograd.set_detect_anomaly(True)
 # Number of latent communities
 latent_dims=[2]
 # Total model iterations
-total_epochs=4
+total_epochs=1
 # Initial iterations for scaling the random effects
 scaling_it=2000
 # Dataset Name
@@ -185,7 +159,7 @@ for run in range(1,total_runs+1):
             T=int(sparse_j.max()+1)
             
             # initialize model
-            model = LDM_BI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_w=sparse_w,nft_size=N,trader_size=T,latent_dim=latent_dim,nft_sample_size=1,trader_sample_size=1).to(device)         
+            model = LDM_BI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_w=sparse_w,nft_size=N,trader_size=T,latent_dim=latent_dim,nft_sample_size=2,trader_sample_size=2).to(device)         
 
             optimizer = optim.Adam(model.parameters(), lr=lr)  
     

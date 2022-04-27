@@ -1,6 +1,9 @@
 # HUSK CREDITS!!!
 
 # Import all the packages
+from dataclasses import replace
+from enum import unique
+from random import sample
 import pandas
 import pandas as pd
 import torch
@@ -31,7 +34,7 @@ else:
 # j corresponds to traders
 
 class LDM_TRI(nn.Module):
-    def __init__(self,sparse_i,sparse_j,sparse_k,sparse_w,nft_size,seller_size,buyer_size,latent_dim):
+    def __init__(self,sparse_i,sparse_j,sparse_k,sparse_w,nft_size,seller_size,buyer_size,latent_dim,nft_sample_size):
         super(LDM_TRI, self).__init__()
         # input sizes
         self.nft_size = nft_size
@@ -50,6 +53,10 @@ class LDM_TRI(nn.Module):
         self.weights = sparse_w
 
         self.Softmax=nn.Softmax(1)
+
+        # for sampling
+        self.sampling_weights=torch.ones(self.nft_size,device=device)
+        self.nft_sample_size=nft_sample_size
 
         # PARAMETERS
         # nft embeddings
@@ -70,23 +77,29 @@ class LDM_TRI(nn.Module):
         
         '''
         self.epoch=epoch
-        
+
+        # mini batch over network
+        sample_i, sample_j, sample_k, sample_weights = self.sample_network()
+        unique_i = torch.unique(sample_i)
+        unique_j = torch.unique(sample_j)
+        unique_k = torch.unique(sample_k)
+
         # distance matrix for seller and NFT embeddings
         # dimension is S x N
         # NB! Important that the nft size is the second dimension
-        d_rl = torch.cdist(self.latent_r+1e-06,self.latent_l,p=2)+1e-06
+        d_rl = torch.cdist(self.latent_r[unique_j]+1e-06,self.latent_l[unique_i],p=2)+1e-06
         
         # distance matrix for buyer and NFT embeddings
         # dimension is B x N
-        d_ul = torch.cdist(self.latent_u+1e-06,self.latent_l,p=2)+1e-06
+        d_ul = torch.cdist(self.latent_u[unique_k]+1e-06,self.latent_l[unique_i],p=2)+1e-06
         
         # calculate seller and nft non link part
         # dimension is S x N
-        non_link_rl = torch.exp(self.nu.unsqueeze(1)-d_rl)
+        non_link_rl = torch.exp(self.nu[unique_j].unsqueeze(1)-d_rl)
 
         # calculate seller and nft non link part
         # dimension is B x N
-        non_link_ul = torch.exp(self.rho+self.tau.unsqueeze(1)-d_ul)
+        non_link_ul = torch.exp(self.rho[unique_i]+self.tau[unique_k].unsqueeze(1)-d_ul)
 
         # total non link matrix
         # dimension is S x B x N
@@ -97,17 +110,32 @@ class LDM_TRI(nn.Module):
         z_pdist1 = torch.sum(total_non_link)
 
         # log-Likehood link term i.e. \sum_ij y_ij*log(lambda_ij)
-        zqdist_lr = -((((self.latent_l[self.sparse_i_idx]-self.latent_r[self.sparse_j_idx]+1e-06)**2).sum(-1))**0.5)
-        zqdist_lu = -((((self.latent_l[self.sparse_i_idx]-self.latent_u[self.sparse_k_idx]+1e-06)**2).sum(-1))**0.5)
-        sum_bias = self.rho[self.sparse_i_idx]+self.nu[self.sparse_j_idx]+self.tau[self.sparse_k_idx]
-        z_pdist2=(self.weights*(sum_bias+zqdist_lr+zqdist_lu)).sum()
+        zqdist_lr = -((((self.latent_l[sample_i]-self.latent_r[sample_j]+1e-06)**2).sum(-1))**0.5)
+        zqdist_lu = -((((self.latent_l[sample_i]-self.latent_u[sample_k]+1e-06)**2).sum(-1))**0.5)
+        sum_bias = self.rho[sample_i]+self.nu[sample_j]+self.tau[sample_k]
+        z_pdist2=(sample_weights*(sum_bias+zqdist_lr+zqdist_lu)).sum()
 
         # Total Log-likelihood
         log_likelihood_sparse=z_pdist2-z_pdist1
         
         return log_likelihood_sparse
-    
-    
+
+    def sample_network(self):
+        # sample nfts
+        sample_idx = torch.multinomial(self.sampling_weights,self.nft_sample_size,replacement=False)
+
+        # extract edges
+        edge_translator = torch.isin(self.sparse_i_idx,sample_idx)
+
+        # get edges
+        sample_i_idx = self.sparse_i_idx[edge_translator]
+        sample_j_idx = self.sparse_j_idx[edge_translator]
+        sample_k_idx = self.sparse_k_idx[edge_translator]
+        sample_weights = self.weights[edge_translator]
+
+        return sample_i_idx, sample_j_idx, sample_k_idx, sample_weights
+
+
     
  
 #################################################################
@@ -121,17 +149,17 @@ torch.autograd.set_detect_anomaly(True)
 # Number of latent communities
 latent_dims=[2]
 # Total model iterations
-total_epochs=2
+total_epochs=1
 # Initial iterations for scaling the random effects
 scaling_it=2000
 # Dataset Name
-dataset='/zhome/45/e/155478/Desktop/02466---Project-work/data/sparse_tri'
+dataset=r'C:\Users\marcu\Google Drev\DTU\02466(fagprojekt)\02466---Project-work\data\2017_11\train\sparse_tri'
 # Learning rates
 lrs=[0.1]
 # Total independent runs of the model
 total_runs=1
 # path to results folder
-results_path = "/zhome/45/e/155478/Desktop/02466---Project-work/results"
+results_path = r"C:\Users\marcu\Google Drev\DTU\02466(fagprojekt)\02466---Project-work\data\2017_11\results\tri"
 
 for run in range(1,total_runs+1):
     for latent_dim in latent_dims:
@@ -156,9 +184,9 @@ for run in range(1,total_runs+1):
             
             # initialize model
             model = LDM_TRI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_k=sparse_k,sparse_w=sparse_w,
-                        nft_size=N,seller_size=S,buyer_size=B,latent_dim=latent_dim).to(device)         
+                        nft_size=N,seller_size=S,buyer_size=B,latent_dim=latent_dim,nft_sample_size=1000).to(device)         
 
-            optimizer = optim.Adam(model.parameters(), lr=lr)  
+            optimizer = optim.Adam(model.parameters(), lr=lr)
     
             print('Dataset: ',dataset)
             print('##################################################################')
@@ -213,61 +241,3 @@ for run in range(1,total_runs+1):
             plt.show()
             """
 
-#################################################################
-'''
-Node classification
-
-'''
-#################################################################
-df = pd.DataFrame[model.latent_l.detach().numpy()]
-df['Category'] = np.loadtxt(dataset+'/sparse_v.txt')
-
-# split data into train and test
-X_train, X_test, y_train, y_test = train_test_split(df, df['Category'], test_size=0.2, random_state=42)
-
-#Multinomial logistic regression
-logreg = lm.LogisticRegression(solver='lbfgs', multi_class='multinomial', random_state=1)
-logreg.fit(X_train, y_train)
-
-#Metrics
-print('Number of miss-classifications for Multinomial regression:\n\t {0} out of {1}'.format(np.sum(logreg.predict(X_test)!=y_test),len(y_test)))
-print('Accuracy for Multinomial regression:\n\t {0}'.format(logreg.score(X_test, y_test)))
-print('Confusion matrix for Multinomial regression:\n\t {0}'.format(confusion_matrix(y_test, logreg.predict(X_test))))
-print('ROC AUC for Multinomial regression:\n\t {0}'.format(roc_auc_score(y_test, logreg.predict(X_test))))
-print('Precision for Multinomial regression:\n\t {0}'.format(precision_score(y_test, logreg.predict(X_test))))
-print('Recall for Multinomial regression:\n\t {0}'.format(recall_score(y_test, logreg.predict(X_test))))
-
-
-
-#KNN
-knn = KNeighborsClassifier(n_neighbors=1)
-knn.fit(X_train, y_train)
-
-#Metrics
-print('Number of miss-classifications for KNN:\n\t {0} out of {1}'.format(np.sum(knn.predict(X_test)!=y_test), len(y_test)))
-print('Accuracy for KNN:\n\t {0}'.format(knn.score(X_test, y_test)))
-print('Confusion matrix for KNN:\n\t {0}'.format(confusion_matrix(y_test, knn.predict(X_test))))
-print('ROC AUC for KNN:\n\t {0}'.format(roc_auc_score(y_test, knn.predict(X_test))))
-print('Precision for KNN:\n\t {0}'.format(precision_score(y_test, knn.predict(X_test))))
-print('Recall for KNN:\n\t {0}'.format(recall_score(y_test, knn.predict(X_test))))
-
-
-
-
-#################################################################
-'''
-Clustering
-
-'''
-#################################################################
-
-kmeans = KMeans(n_clusters=3, random_state=0).fit(df)
-
-label = kmeans.labels_
-
-u_labels = np.unique(label)
-
-for i in u_labels:
-    plt.scatter(df[label == i, 0], df[label == i, 1], s=10, c=np.random.rand(3,), label='cluster %d' % i)
-plt.legend()
-plt.show()

@@ -66,8 +66,6 @@ class LDM_BI(nn.Module):
         
         '''
         self.epoch=epoch   
-
-        self.sparse_i_idx, self.sparse_j_idx = self.sample_network()
                             
         # exp(||z_i - q_j||)
         mat=torch.exp(-(torch.cdist(self.latent_z+1e-06,self.latent_q,p=2)+1e-06))
@@ -89,36 +87,7 @@ class LDM_BI(nn.Module):
     
         return log_likelihood_sparse
 
-    def sample_network(self):
-        '''
-        Network Sampling procecdure used for large scale networks
-        '''
-        # USE torch_sparse lib i.e. : from torch_sparse import spspmm
-
-        # sample for undirected network
-        sample_idx_nfts=torch.multinomial(self.sampling_weights_nfts, self.nft_sample_size,replacement=False)
-        # translate sampled indices w.r.t. to the full matrix, it is just a diagonal matrix
-        indices_translator=torch.cat([sample_idx_nfts.unsqueeze(0),sample_idx_nfts.unsqueeze(0)],0)
-        # adjacency matrix in edges format
-        edges=torch.cat([self.sparse_i_idx.unsqueeze(0),self.sparse_j_idx.unsqueeze(0)],0)
-        # matrix multiplication B = Adjacency x Indices translator
-        indexC, valueC = spspmm(edges,torch.ones(edges.shape[1]), indices_translator,torch.ones(indices_translator.shape[1]),self.nft_size,self.nft_size,self.nft_size,coalesced=True)
-        # second matrix multiplication C = Indices translator x B, indexC returns where we have edges inside the sample
-        indexC, valueC = spspmm(indices_translator,torch.ones(indices_translator.shape[1]),indexC,valueC,self.nft_size,self.nft_size,self.nft_size,coalesced=True)
-        
-        # edge row position
-        sparse_nfts_sample=indexC[0,:]
-        # edge column position
-        sparse_traders_sample=indexC[1,:]
-     
-        
-        return sparse_nfts_sample,sparse_traders_sample
-        
-    #
     
-    
-    
- 
 #################################################################
 '''
 MAIN: Training LDM

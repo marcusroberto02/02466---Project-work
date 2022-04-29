@@ -31,4 +31,3 @@ print("Unique NFTS:", len(set(df["Unique_id_collection"])))
 print("Unique Categories:", len(set(df["Category"])))
 
 
-

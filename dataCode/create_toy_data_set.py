@@ -18,5 +18,5 @@ for chunk in pandas.read_csv(
 
 # sellers_buyers_table = small_dataset[['Seller_address','Buyer_address','Unique_id_collection']]
 
-small_dataset.to_csv('C:/Users/khelp/OneDrive/Desktop/4. semester/Fagprojekt/02466---Project-work/data/small_dataset.csv')
+small_dataset.to_csv('')
 

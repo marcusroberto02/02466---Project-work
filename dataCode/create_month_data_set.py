@@ -32,14 +32,13 @@ def sparse_tri_data(data_path, dataset):
 
 
 def sparse_bi_data(df,path, end):
-
-
+    # Hacks a way to get buyers as an extention of sellers
     df_buyers = df.copy()
     df_buyers["Seller_address"] = df_buyers["Buyer_address"]
-
     df = pd.concat([df, df_buyers])
     df = df.rename(columns = {'Seller_address':'Trader_address'})
 
+    # factorizes data and splits into test and training data
     facts = ["Unique_id_collection", "Trader_address", "Category"]
     df[facts] = df[facts].apply(lambda x: pandas.factorize(x)[0])
     df_test = df[df["Datetime_updated"] >= end]
@@ -89,12 +88,17 @@ while start < datetime.datetime(2019, 4, 1):
             temp = chunk[chunk["Datetime_updated"] >= start]
             dataset = pandas.concat([dataset, temp[temp["Datetime_updated"] < end + relativedelta(weeks =+ 1)]])
 
+        # A copy of the dataset used to get the sparse text files for the bi partite case
         df = dataset.copy()
         facts = ["Unique_id_collection","Seller_address","Buyer_address","Category"]
+        # factorize before the data is split into train and test
+        # this is done to avoid the same categories being used in both train and test
         dataset[facts] = dataset[facts].apply(lambda x: pandas.factorize(x)[0])
+        # split into train and test based on the date
         test = dataset[dataset["Datetime_updated"] >= end]
         dataset = dataset[dataset["Datetime_updated"] < end]
 
+        #Create directories for the current month
         os.makedirs(path + date)
         os.makedirs(path + date + "/train")
         os.makedirs(path + date + "/train/bi")
@@ -102,15 +106,16 @@ while start < datetime.datetime(2019, 4, 1):
         os.makedirs(path + date + "/test")
         os.makedirs(path + date + "/test/bi")
         os.makedirs(path + date + "/test/tri")
-
+        #Save test and train datasets
         dataset.to_csv(path + date + "/train/data_train.csv")
         test.to_csv(path + date + "/test/data_test.csv")
 
+        #Save the sparse text files
         sparse_tri_data(path + date + "/train/","data_train.csv")
         sparse_tri_data(path + date + "/test/", "data_test.csv")
         sparse_bi_data(df,path + date,end)
 
-
+    #Update the start and end dates
     start = end
     end = end + relativedelta(months=+1)
 

@@ -144,7 +144,6 @@ class LDM(nn.Module):
    
     
     def link_prediction(self):
-
         with torch.no_grad():
             z_pdist_miss=((((self.latent_z[self.removed_i]-self.latent_z[self.removed_j]+1e-06)**2).sum(-1))**0.5)
             if self.scaling:

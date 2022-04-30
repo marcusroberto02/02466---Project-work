@@ -1,6 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
 
+<<<<<<< HEAD
 z = torch.load(r"C:\Users\marcu\Google Drev\DTU\02466(fagprojekt)\02466---Project-work\data\2017_11\results\bi\nft_embeddings")
 q = torch.load(r"C:\Users\marcu\Google Drev\DTU\02466(fagprojekt)\02466---Project-work\data\2017_11\results\bi\trader_embeddings")
 
@@ -18,3 +19,9 @@ plt.show()
 
 print(len(z))
 print(len(q))
+=======
+nft_z = torch.load("../results/seller_embeddings")
+
+print(nft_z)
+
+>>>>>>> e30f33f3926495f13d64fbae40e48abdf98e3e6f

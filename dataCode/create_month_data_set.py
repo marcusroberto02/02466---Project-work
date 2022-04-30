@@ -11,7 +11,7 @@ from dateutil.relativedelta import relativedelta
 
 def sparse_tri_data(data_path, dataset):
 
-    df = pandas.read_csv(data_path + dataset)[["Unique_id_collection","Seller_address","Buyer_address","Category"]]
+    df = pd.read_csv(data_path + dataset)[["Unique_id_collection","Seller_address","Buyer_address","Category"]]
     #Removes dublicate trades and increments counter
     df = df.groupby(["Unique_id_collection","Seller_address","Buyer_address","Category"]).size().reset_index()
     # rename count column
@@ -24,7 +24,7 @@ def sparse_tri_data(data_path, dataset):
     df["Category"].to_csv(store_path + 'sparse_c.txt',header=None,index=None)
     df["Count"].to_csv(store_path + 'sparse_w.txt',header=None,index=None)
     #write to a text file
-    with open(store_path + "Info.txt", "w") as f:
+    with open(store_path + "info.txt", "w") as f:
         f.write("Number of unique Sellers: " + str(len(set(df["Seller_address"]))) + "\n")
         f.write("Number of unique Buyers: " + str(len(set(df["Buyer_address"]))) + "\n")
         f.write("Number of unique NFT: " + str(len(set(df["Unique_id_collection"]))) + "\n")
@@ -38,18 +38,28 @@ def sparse_bi_data(df,path, end):
     df = pd.concat([df, df_buyers])
     df = df.rename(columns = {'Seller_address':'Trader_address'})
 
-    # factorizes data and splits into test and training data
-    facts = ["Unique_id_collection", "Trader_address", "Category"]
-    df[facts] = df[facts].apply(lambda x: pandas.factorize(x)[0])
+    # factorizes data and splits into test and training 
+    df_train = df[df["Datetime_updated"] < end]
+    df_test = df[df["Datetime_updated"] >= end]
+
+    # remove all rows in test set that contains unseen nfts or traders
+    df_test = df_test[df_test["Unique_id_collection"].isin(df_train["Unique_id_collection"])]
+    df_test = df_test[df_test["Trader_address"].isin(df_train["Trader_address"])]
+
+    # concatenate train and test to get identical ids
+    df = pd.concat([df_train,df_test])
+    facts = ["Unique_id_collection", "Trader_address"]
+    df[facts] = df[facts].apply(lambda x: pd.factorize(x)[0])
     df_test = df[df["Datetime_updated"] >= end]
     df_train = df[df["Datetime_updated"] < end]
 
     #Removes dublicate trades and increments counter
-    df_test = df_test.groupby(["Unique_id_collection","Trader_address","Category"]).size().reset_index()
     df_train = df_train.groupby(["Unique_id_collection", "Trader_address", "Category"]).size().reset_index()
+    df_test = df_test.groupby(["Unique_id_collection","Trader_address","Category"]).size().reset_index()
+    
     # rename count column
-    df_test.columns = ["Unique_id_collection","Trader_address","Category","Count"]
     df_train.columns = ["Unique_id_collection","Trader_address","Category","Count"]
+    df_test.columns = ["Unique_id_collection","Trader_address","Category","Count"]
 
     # save files
     store_path = path + "/train/" + "bi/"
@@ -58,7 +68,7 @@ def sparse_bi_data(df,path, end):
     df_train["Category"].to_csv(store_path + 'sparse_c.txt',header=None,index=None)
     df_train["Count"].to_csv(store_path + 'sparse_w.txt',header=None,index=None)
 
-    with open(store_path + "Info.txt", "w") as f:
+    with open(store_path + "info.txt", "w") as f:
         f.write("Number of unique Traders: " + str(len(set(df_train["Trader_address"]))) + "\n")
         f.write("Number of unique NFT: " + str(len(set(df_train["Unique_id_collection"]))) + "\n")
         f.write("Number of unique categories: " + str(len(set(df_train["Category"]))))
@@ -69,34 +79,47 @@ def sparse_bi_data(df,path, end):
     df_test["Category"].to_csv(store_path + 'sparse_c.txt', header=None, index=None)
     df_test["Count"].to_csv(store_path + 'sparse_w.txt', header=None, index=None)
 
-    with open(store_path + "Info.txt", "w") as f:
+    with open(store_path + "info.txt", "w") as f:
         f.write("Number of unique Traders: " + str(len(set(df_test["Trader_address"]))) + "\n")
         f.write("Number of unique NFT: " + str(len(set(df_test["Unique_id_collection"]))) + "\n")
         f.write("Number of unique categories: " + str(len(set(df_test["Category"]))))
 
 
-path = "../data/"
+path = "./data/"
 start = datetime.datetime(2019, 1, 1)
 end = start + relativedelta(months =+ 1)
 
-while start < datetime.datetime(2019, 4, 1):
-    dataset = pandas.DataFrame()
+while start < datetime.datetime(2019, 10, 1):
+    dataset = pd.DataFrame()
     date = start.strftime("%Y-%m")
     # check if a directory exists for the current month and
     if not os.path.exists(path + date):
-        for chunk in pandas.read_csv("../data/Data_API.csv", chunksize=10000, parse_dates=[18]):
+        i = 0
+        for chunk in pd.read_csv(path + "Data_API.csv", chunksize=10000, parse_dates=[18]):
             temp = chunk[chunk["Datetime_updated"] >= start]
-            dataset = pandas.concat([dataset, temp[temp["Datetime_updated"] < end + relativedelta(weeks =+ 1)]])
+            dataset = pd.concat([dataset, temp[temp["Datetime_updated"] < end + relativedelta(weeks =+ 1)]])
+            if i % 100 == 0:
+                print(i)
+            i += 1
 
         # A copy of the dataset used to get the sparse text files for the bi partite case
         df = dataset.copy()
         facts = ["Unique_id_collection","Seller_address","Buyer_address","Category"]
         # factorize before the data is split into train and test
         # this is done to avoid the same categories being used in both train and test
-        dataset[facts] = dataset[facts].apply(lambda x: pandas.factorize(x)[0])
-        # split into train and test based on the date
+        # remove all rows in test set that contains unseen nfts or traders
         test = dataset[dataset["Datetime_updated"] >= end]
         dataset = dataset[dataset["Datetime_updated"] < end]
+        test = test[test["Unique_id_collection"].isin(dataset["Unique_id_collection"])]
+        test = test[test["Seller_address"].isin(dataset["Seller_address"])]
+        test = test[test["Buyer_address"].isin(dataset["Buyer_address"])]
+
+        # concatenate train and test to get identical ids
+        df = pd.concat([dataset,test])
+        df[facts] = df[facts].apply(lambda x: pd.factorize(x)[0])
+        # split into train and test based on the date
+        test = df[df["Datetime_updated"] >= end]
+        dataset = df[df["Datetime_updated"] < end]
 
         #Create directories for the current month
         os.makedirs(path + date)
@@ -114,11 +137,11 @@ while start < datetime.datetime(2019, 4, 1):
         sparse_tri_data(path + date + "/train/","data_train.csv")
         sparse_tri_data(path + date + "/test/", "data_test.csv")
         sparse_bi_data(df,path + date,end)
+    break
 
     #Update the start and end dates
     start = end
     end = end + relativedelta(months=+1)
-
 
 
 

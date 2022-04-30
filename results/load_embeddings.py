@@ -1,5 +1,20 @@
 import torch
+import matplotlib.pyplot as plt
 
-nft_z = torch.load("C:/Users/marcu/Google Drev/DTU/02466(fagprojekt)/02466---Project-work/results/seller_embeddings")
+z = torch.load(r"C:\Users\marcu\Google Drev\DTU\02466(fagprojekt)\02466---Project-work\data\2017_11\results\bi\nft_embeddings")
+q = torch.load(r"C:\Users\marcu\Google Drev\DTU\02466(fagprojekt)\02466---Project-work\data\2017_11\results\bi\trader_embeddings")
 
-print(nft_z)
+# nft
+z = z.detach().numpy()
+zx = [el[0] for el in z]
+zy = [el[1] for el in z]
+plt.scatter(zx,zy,s=1,color="blue")
+# trader
+q = q.detach().numpy()
+qx = [el[0] for el in q]
+qy = [el[1] for el in q]
+plt.scatter(qx,qy,s=1,color="red")
+plt.show()
+
+print(len(z))
+print(len(q))

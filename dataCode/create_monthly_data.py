@@ -13,11 +13,11 @@ def main():
     path = "./data/"
     
     # define start and end
-    start = datetime.datetime(2017, 12, 1)
+    start = datetime.datetime(2019, 1, 1)
     end = start + relativedelta(months =+ 1)
 
     # mark last month for storing data
-    last_month = datetime.datetime(2021, 4, 1)
+    last_month = datetime.datetime(2019, 2, 1)
     
     while start < last_month:
         dataset = pd.DataFrame()

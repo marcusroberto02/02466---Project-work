@@ -33,3 +33,5 @@ df["Count"].to_csv(store_path + 'sparse_w.txt',header=None,index=None)
 print("Unique Traders:", len(set(df["Trader_address"])))
 print("Unique NFTS:", len(set(df["Unique_id_collection"])))
 print("Unique categories", len(set(df["Category"])))
+
+

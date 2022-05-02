@@ -34,7 +34,7 @@ else:
 # j corresponds to traders
 
 class LDM_TRI(nn.Module):
-    def __init__(self,sparse_i,sparse_j,sparse_k,sparse_w,nft_size,seller_size,buyer_size,latent_dim,nft_sample_size):
+    def __init__(self,sparse_i,sparse_j,sparse_k,sparse_w,nft_size,seller_size,buyer_size,latent_dim,nft_sample_size,sparse_i_test=None,sparse_j_test=None,sparse_k_test=None,sparse_w_test=None):
         super(LDM_TRI, self).__init__()
         # input sizes
         self.nft_size = nft_size
@@ -51,6 +51,12 @@ class LDM_TRI(nn.Module):
         self.sparse_j_idx = sparse_j
         self.sparse_k_idx = sparse_k
         self.weights = sparse_w
+
+        # used for the test set
+        self.sparse_i_test = sparse_i_test
+        self.sparse_j_test = sparse_j_test
+        self.sparse_k_test = sparse_k_test
+        self.sparse_w_test = sparse_w_test
 
         self.Softmax=nn.Softmax(1)
 
@@ -134,6 +140,41 @@ class LDM_TRI(nn.Module):
         sample_weights = self.weights[edge_translator]
 
         return sample_i_idx, sample_j_idx, sample_k_idx, sample_weights
+    
+    def link_prediction(self):
+        # apply link prediction to the test set
+        with torch.no_grad():
+            d_rl = torch.cdist(self.latent_r[torch.unique(self.sparse_j_test)]+1e-06,self.latent_l[torch.unique(self.sparse_i_test)],p=2)+1e-06
+            d_ul = torch.cdist(self.latent_u[torch.unique(self.sparse_k_test)]+1e-06,self.latent_l[torch.unique(self.sparse_i_test)],p=2)+1e-06
+            
+            # calculate seller and nft non link part
+            non_link_rl = torch.exp(self.nu[torch.unique(self.sparse_j_test)].unsqueeze(1)-d_rl)
+
+            # calculate seller and nft non link part
+            # dimension is B x N
+            non_link_ul = torch.exp(self.rho[torch.unique(self.sparse_i_test)]+self.tau[torch.unique(self.sparse_k_test)].unsqueeze(1)-d_ul)
+
+            # total non link matrix
+            # dimension is S x B x N
+            # S x 1 x N * B x N = S x B x N
+            rates = non_link_rl.unsqueeze(1) * non_link_ul
+            
+            self.rates = rates
+           
+            # assign target class
+            self.target = torch.zeros(self.rates.shape)
+            nft_dict = {nft.item() : i for i, nft in enumerate(torch.unique(self.sparse_i_test))}
+            seller_dict = {seller.item() : j for j, seller in enumerate(torch.unique(self.sparse_j_test))}
+            buyer_dict = {buyer.item() : k for k, buyer in enumerate(torch.unique(self.sparse_k_test))}
+            for i,j,k in zip(self.sparse_i_test,self.sparse_j_test,self.sparse_k_test):
+                self.target[seller_dict[j.item()],buyer_dict[k.item()],nft_dict[i.item()]]= 1
+            
+            # flatten the matrices to use as input for the sklearn matrix 
+            self.rates = self.rates.flatten()
+            self.target = self.target.flatten()
+            precision, tpr, thresholds = metrics.precision_recall_curve(self.target.data.numpy(), self.rates.cpu().data.numpy())
+
+        return metrics.roc_auc_score(self.target.data.numpy(),self.rates.cpu().data.numpy()),metrics.auc(tpr,precision)
 
 
     
@@ -150,16 +191,14 @@ torch.autograd.set_detect_anomaly(True)
 latent_dims=[2]
 # Total model iterations
 total_epochs=1
-# Initial iterations for scaling the random effects
-scaling_it=2000
 # Dataset Name
-dataset=r'C:\Users\marcu\Google Drev\DTU\02466(fagprojekt)\02466---Project-work\data\2017_11\train\sparse_tri'
+dataset='./data/2019-01'
 # Learning rates
 lrs=[0.1]
 # Total independent runs of the model
 total_runs=1
 # path to results folder
-results_path = r"C:\Users\marcu\Google Drev\DTU\02466(fagprojekt)\02466---Project-work\data\2017_11\results\tri"
+results_path = dataset + "/results/tri"
 
 for run in range(1,total_runs+1):
     for latent_dim in latent_dims:
@@ -169,14 +208,28 @@ for run in range(1,total_runs+1):
         for lr in lrs:
             print('Learning rate: ',lr)
             # EDGELIST
+            # TRAIN SET
+            trainset = dataset + "/train/tri"
             # nft input
-            sparse_i=torch.from_numpy(np.loadtxt(dataset+'/sparse_i.txt')).long().to(device)
+            sparse_i=torch.from_numpy(np.loadtxt(trainset+'/sparse_i.txt')).long().to(device)
             # seller input
-            sparse_j=torch.from_numpy(np.loadtxt(dataset+'/sparse_j.txt')).long().to(device)
+            sparse_j=torch.from_numpy(np.loadtxt(trainset+'/sparse_j.txt')).long().to(device)
             # buyer input
-            sparse_k=torch.from_numpy(np.loadtxt(dataset+'/sparse_k.txt')).long().to(device)
+            sparse_k=torch.from_numpy(np.loadtxt(trainset+'/sparse_k.txt')).long().to(device)
             # weight input
-            sparse_w=torch.from_numpy(np.loadtxt(dataset+'/sparse_w.txt')).long().to(device)
+            sparse_w=torch.from_numpy(np.loadtxt(trainset+'/sparse_w.txt')).long().to(device)
+
+            # TEST SET
+            testset = dataset + "/test/tri"
+            # nft items
+            sparse_i_test=torch.from_numpy(np.loadtxt(testset+'/sparse_i.txt')).long().to(device)
+            # sellers
+            sparse_j_test=torch.from_numpy(np.loadtxt(testset+'/sparse_j.txt')).long().to(device)
+            # buyers
+            sparse_k_test=torch.from_numpy(np.loadtxt(testset+'/sparse_k.txt')).long().to(device)
+            # weight items
+            sparse_w_test=torch.from_numpy(np.loadtxt(testset+'/sparse_w.txt')).long().to(device)
+
             # network size
             N=int(sparse_i.max()+1)
             S=int(sparse_j.max()+1)
@@ -184,7 +237,9 @@ for run in range(1,total_runs+1):
             
             # initialize model
             model = LDM_TRI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_k=sparse_k,sparse_w=sparse_w,
-                        nft_size=N,seller_size=S,buyer_size=B,latent_dim=latent_dim,nft_sample_size=1000).to(device)         
+                            nft_size=N,seller_size=S,buyer_size=B,latent_dim=latent_dim,nft_sample_size=1000,
+                            sparse_i_test=sparse_i_test,sparse_j_test=sparse_j_test,
+                            sparse_k_test=sparse_k_test,sparse_w_test=sparse_w_test).to(device)         
 
             optimizer = optim.Adam(model.parameters(), lr=lr)
     
@@ -198,9 +253,6 @@ for run in range(1,total_runs+1):
     
     
             for epoch in range(total_epochs):
-             
-                if epoch==scaling_it:
-                    model.scaling=0
                 
                 loss=-model.LSM_likelihood_bias(epoch=epoch)
                 losses.append(loss.item())
@@ -208,6 +260,16 @@ for run in range(1,total_runs+1):
                 optimizer.zero_grad() # clear the gradients.   
                 loss.backward() # backpropagate
                 optimizer.step() # update the weights
+
+                if epoch%100==0:
+                    # AUC-ROC and PR-AUC
+                    # Receiver operating characteristic-area under curve   AND precision recal-area under curve
+                    roc,pr=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr
+                    #print('Epoch: ',epoch)
+                    #print('ROC:',roc)
+                    #print('PR:',pr)
+                    ROC.append(roc)
+                    PR.append(pr)
 
             # save bias terms
             torch.save(model.rho.detach().cpu(),results_path + "/nft_biases")
@@ -219,25 +281,20 @@ for run in range(1,total_runs+1):
             torch.save(model.latent_r.detach().cpu(),results_path + "/seller_embeddings")
             torch.save(model.latent_u.detach().cpu(),results_path + "/buyer_embeddings")
 
+            roc,pr=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr
+            #print('dim',latent_dim)
+            #print('Epoch: ',epoch)
+            #print('ROC:',roc)
+            #print('PR:',pr)
+            ROC.append(roc)
+            PR.append(pr)
+            #print(ROC)
+            #print(PR)
+            filename_roc=results_path+"/roc.txt"
+            filename_pr=results_path+"/pr.txt"
+            # save performance statistics
+            np.savetxt(filename_roc,(ROC),delimiter=' ')
+            np.savetxt(filename_pr,(PR),delimiter=' ')
 
-
-            # plot in latent space
-            # nft
-            """
-            l = model.latent_l.detach().numpy()
-            lx = [el[0] for el in l]
-            ly = [el[1] for el in l]
-            plt.scatter(lx,ly,s=10)
-            # seller
-            r = model.latent_r.detach().numpy()
-            rx = [el[0] for el in r]
-            ry = [el[1] for el in r]
-            plt.scatter(rx,ry,s=10)
-            # buyer
-            u = model.latent_u.detach().numpy()
-            ux = [el[0] for el in u]
-            uy = [el[1] for el in u]
-            plt.scatter(ux,uy,s=10)
-            plt.show()
-            """
+        
 

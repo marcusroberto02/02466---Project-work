@@ -25,7 +25,7 @@ else:
 # j corresponds to traders
 
 class LDM_BI(nn.Module):
-    def __init__(self,sparse_i,sparse_j,sparse_w,nft_size,trader_size,latent_dim,nft_sample_size,trader_sample_size):
+    def __init__(self,sparse_i,sparse_j,sparse_w,nft_size,trader_size,latent_dim,nft_sample_size,trader_sample_size,sparse_i_test=None,sparse_j_test=None,sparse_w_test=None):
         super(LDM_BI, self).__init__()
         # input sizes
         self.nft_size = nft_size
@@ -42,8 +42,13 @@ class LDM_BI(nn.Module):
         self.weights = sparse_w
 
         self.Softmax=nn.Softmax(1)
-        
-        #
+
+        # used for the test set
+        self.sparse_i_test = sparse_i_test
+        self.sparse_j_test = sparse_j_test
+        self.sparse_w_test = sparse_w_test
+
+        # used for sampling
         self.sampling_weights_nfts = torch.ones(self.nft_size,device = device)
         self.sampling_weights_traders=torch.ones(self.trader_size,device = device)
         self.nft_sample_size=nft_sample_size
@@ -66,27 +71,66 @@ class LDM_BI(nn.Module):
         
         '''
         self.epoch=epoch   
-                            
+
+        # mini batch over network
+        sample_i, sample_j, sample_weights = self.sample_network()
+        unique_i = torch.unique(sample_i)
+        unique_j = torch.unique(sample_j)
+
         # exp(||z_i - q_j||)
-        mat=torch.exp(-(torch.cdist(self.latent_z+1e-06,self.latent_q,p=2)+1e-06))
+        mat=torch.exp(-(torch.cdist(self.latent_z[unique_i]+1e-06,self.latent_q[unique_j],p=2)+1e-06))
         # Non-link N^2 likelihood term, i.e. \sum_ij lambda_ij
         # for the bipartite case the diagonal part should be removed
         # as well as the 1/2 term
         # exp(gamma)*exp(delta)*exp(mat)
-
-        # spar
-
-        z_pdist1=torch.mm(torch.mm(torch.exp(self.gamma.unsqueeze(0)),mat),torch.exp(self.delta.unsqueeze(-1)))
+        z_pdist1=torch.mm(torch.mm(torch.exp(self.gamma[unique_i].unsqueeze(0)),mat),torch.exp(self.delta[unique_j].unsqueeze(-1)))
         # log-Likehood link term i.e. \sum_ij y_ij*log(lambda_ij)
-        zqdist = -((((self.latent_z[self.sparse_i_idx]-self.latent_q[self.sparse_j_idx]+1e-06)**2).sum(-1))**0.5)
-        z_pdist2=(self.weights*(self.gamma[self.sparse_i_idx]+self.delta[self.sparse_j_idx]+zqdist)).sum()
+        zqdist = -((((self.latent_z[sample_i]-self.latent_q[sample_j]+1e-06)**2).sum(-1))**0.5)
+        z_pdist2=(sample_weights*(self.gamma[sample_i]+self.delta[sample_j]+zqdist)).sum()
 
         # Total Log-likelihood
         log_likelihood_sparse=z_pdist2-z_pdist1
     
     
         return log_likelihood_sparse
+    
+    def sample_network(self):
+        # sample nfts
+        sample_idx = torch.multinomial(self.sampling_weights_nfts,self.nft_sample_size,replacement=False)
 
+        # extract edges
+        edge_translator = torch.isin(self.sparse_i_idx,sample_idx)
+
+        # get edges
+        sample_i_idx = self.sparse_i_idx[edge_translator]
+        sample_j_idx = self.sparse_j_idx[edge_translator]
+        sample_weights = self.weights[edge_translator]
+
+        return sample_i_idx, sample_j_idx, sample_weights
+
+    def link_prediction(self):
+        # apply link prediction to the test set
+        with torch.no_grad():
+            # get ||z_i-q_j||
+            #zq_dist = ((((self.latent_z[self.sparse_i_test]-self.latent_q[self.sparse_j_test]+1e-06)**2).sum(-1))**0.5)
+            zq_dist = torch.cdist(self.latent_z[torch.unique(self.sparse_i_test)]+1e-06,self.latent_q[torch.unique(self.sparse_j_test)],p=2)+1e-06
+            # get gamma_i+delta_j-||z_i-q_j||
+            exp_term = self.gamma[torch.unique(self.sparse_i_test)].unsqueeze(1)+self.delta[torch.unique(self.sparse_j_test)]-zq_dist
+            rates = torch.exp(exp_term)
+            self.rates = rates
+            # assign target class
+            self.target = torch.zeros(self.rates.shape)
+            nft_dict = {nft.item() : i for i, nft in enumerate(torch.unique(self.sparse_i_test))}
+            trader_dict = {trader.item() : j for j, trader in enumerate(torch.unique(self.sparse_j_test))}
+            for i,j in zip(self.sparse_i_test,self.sparse_j_test):
+                self.target[nft_dict[i.item()],trader_dict[j.item()]] = 1
+            
+            # flatten the matrices to use as input for the sklearn matrix 
+            self.rates = self.rates.flatten()
+            self.target = self.target.flatten()
+            precision, tpr, thresholds = metrics.precision_recall_curve(self.target.data.numpy(), self.rates.cpu().data.numpy())
+
+        return metrics.roc_auc_score(self.target.data.numpy(),self.rates.cpu().data.numpy()),metrics.auc(tpr,precision)
     
 #################################################################
 '''
@@ -100,14 +144,14 @@ torch.autograd.set_detect_anomaly(True)
 latent_dims=[2]
 # Total model iterations
 total_epochs=1
-# Initial iterations for scaling the random effects
-scaling_it=2000
 # Dataset Name
-dataset='data/sparse_bi'
+dataset='./data/2019-01'
 # Learning rates
 lrs=[0.1]
 # Total independent runs of the model
 total_runs=1
+# results path
+results_path = dataset + "/results/bi"
 
 for run in range(1,total_runs+1):
     for latent_dim in latent_dims:
@@ -117,18 +161,32 @@ for run in range(1,total_runs+1):
         for lr in lrs:
             print('Learning rate: ',lr)
 
+            # TRAIN SET
+            trainset = dataset + "/train/bi"
             # nft items
-            sparse_i=torch.from_numpy(np.loadtxt(dataset+'/sparse_i.txt')).long().to(device)
+            sparse_i=torch.from_numpy(np.loadtxt(trainset+'/sparse_i.txt')).long().to(device)
             # traders
-            sparse_j=torch.from_numpy(np.loadtxt(dataset+'/sparse_j.txt')).long().to(device)
+            sparse_j=torch.from_numpy(np.loadtxt(trainset+'/sparse_j.txt')).long().to(device)
             # weight items
-            sparse_w=torch.from_numpy(np.loadtxt(dataset+'/sparse_w.txt')).long().to(device)
+            sparse_w=torch.from_numpy(np.loadtxt(trainset+'/sparse_w.txt')).long().to(device)
+
+            # TEST SET
+            testset = dataset + "/test/bi"
+            # nft items
+            sparse_i_test=torch.from_numpy(np.loadtxt(testset+'/sparse_i.txt')).long().to(device)
+            # traders
+            sparse_j_test=torch.from_numpy(np.loadtxt(testset+'/sparse_j.txt')).long().to(device)
+            # weight items
+            sparse_w_test=torch.from_numpy(np.loadtxt(testset+'/sparse_w.txt')).long().to(device)
+
             # network size
             N=int(sparse_i.max()+1)
             T=int(sparse_j.max()+1)
             
             # initialize model
-            model = LDM_BI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_w=sparse_w,nft_size=N,trader_size=T,latent_dim=latent_dim,nft_sample_size=2,trader_sample_size=2).to(device)         
+            model = LDM_BI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_w=sparse_w,nft_size=N,trader_size=T,
+                           latent_dim=latent_dim,nft_sample_size=1000,trader_sample_size=2,
+                           sparse_i_test=sparse_i_test,sparse_j_test=sparse_j_test,sparse_w_test=sparse_w_test).to(device)         
 
             optimizer = optim.Adam(model.parameters(), lr=lr)  
     
@@ -140,31 +198,43 @@ for run in range(1,total_runs+1):
             PR=[]
             # model.scaling=1
     
-    
             for epoch in range(total_epochs):
-             
-                if epoch==scaling_it:
-                    model.scaling=0
                 
+                # get log likelihood
                 loss=-model.LSM_likelihood_bias(epoch=epoch)
                 losses.append(loss.item())
                 
-         
-             
                 optimizer.zero_grad() # clear the gradients.   
                 loss.backward() # backpropagate
                 optimizer.step() # update the weights
+                if epoch%100==0:
+                    # AUC-ROC and PR-AUC
+                    # Receiver operating characteristic-area under curve   AND precision recal-area under curve
+                    roc,pr=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr
+                    #print('Epoch: ',epoch)
+                    #print('ROC:',roc)
+                    #print('PR:',pr)
+                    ROC.append(roc)
+                    PR.append(pr)
             
-            # plot in latent space
-            # nft
-            z = model.latent_z.detach().numpy()
-            zx = [el[0] for el in z]
-            zy = [el[1] for el in z]
-            plt.scatter(zx,zy,s=1)
-            # trader
-            q = model.latent_q.detach().numpy()
-            qx = [el[0] for el in q]
-            qy = [el[1] for el in q]
-            plt.scatter(qx,qy,s=1)
-            plt.show()
-        
+            # save bias/random-effect      
+            torch.save(model.gamma.detach().cpu(),results_path+"/nft_biases")
+            torch.save(model.delta.detach().cpu(),results_path+"/trader_biases")
+            # save latent embedding position
+            torch.save(model.latent_z.detach().cpu(),results_path+"/nft_embeddings")
+            torch.save(model.latent_q.detach().cpu(),results_path+"/trader_embeddings")
+            roc,pr=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr
+            #print('dim',latent_dim)
+            #print('Epoch: ',epoch)
+            #print('ROC:',roc)
+            #print('PR:',pr)
+            ROC.append(roc)
+            PR.append(pr)
+            #print(ROC)
+            #print(PR)
+            filename_roc=results_path+"/roc.txt"
+            filename_pr=results_path+"/pr.txt"
+            # save performance statistics
+            np.savetxt(filename_roc,(ROC),delimiter=' ')
+            np.savetxt(filename_pr,(PR),delimiter=' ')
+            

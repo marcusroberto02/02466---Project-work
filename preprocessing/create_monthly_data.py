@@ -10,15 +10,15 @@ from dateutil.relativedelta import relativedelta
 # main function
 def main():
     # define path for storing data
-    path = "./data/"
-    dataset_name = "Data_API.csv"
+    path = "./data/WAX/"
+    dataset_name = "data_WAX.csv"
     
     # define start and end
-    start = datetime.datetime(2019, 1, 1)
+    start = datetime.datetime(2020, 10, 1)
     end = start + relativedelta(months =+ 1)
 
     # mark last month for storing data
-    last_month = datetime.datetime(2019, 2, 1)
+    last_month = datetime.datetime(2021, 11, 1)
     
     while start < last_month:
         dataset = pd.DataFrame()
@@ -31,10 +31,10 @@ def main():
         max_date = datetime.datetime(2014, 10, 1)
         if not os.path.exists(store_path):
             for chunk in pd.read_csv(path + dataset_name, chunksize=10000, parse_dates=[18]):
-                if max(chunk["Datetime_updated"]) > max_date:
-                    max_date = max(chunk["Datetime_updated"])
-                if min(chunk["Datetime_updated"]) < min_date:
-                    min_date = min(chunk["Datetime_updated"])
+                # if max(chunk["Datetime_updated"]) > max_date:
+                #     max_date = max(chunk["Datetime_updated"])
+                # if min(chunk["Datetime_updated"]) < min_date:
+                #     min_date = min(chunk["Datetime_updated"])
                 temp = chunk[chunk["Datetime_updated"] >= start]
                 dataset = pd.concat([dataset, temp[temp["Datetime_updated"] < end + relativedelta(weeks =+ 1)]])
                 if i % 100 == 0:
@@ -52,8 +52,6 @@ def main():
 
             # save entire dataframe
             save_data(dataset,end,store_path)
-            
-            break
 
             #Update the start and end dates
             start = end

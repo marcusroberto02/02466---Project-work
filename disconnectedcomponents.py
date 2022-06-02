@@ -97,11 +97,18 @@ clusters = defaultdict(lambda:[])
 for crypto in cryptos:
     clusters[cluster[crypto]].append(crypto)
 
+crypto_count = defaultdict(lambda: 0)
 cluster_count = defaultdict(lambda: 0)
 
 for crypto in df["Crypto"]:
+    crypto_count[crypto] += 1
     cluster_count[cluster[crypto]] += 1
 
 for c in range(cnum):
-    print(clusters[c], cluster_count[c])
+    print(clusters[c], cluster_count[c], len(clusters[c]))
+    for crypto in clusters[c]:
+        print(crypto + ": " + str(crypto_count[crypto]))
+    
+
+
 

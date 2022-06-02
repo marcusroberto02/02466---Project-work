@@ -6,7 +6,9 @@ from collections import defaultdict,deque
 
 from sympy import true
 #print(test)
-df = pd.read_csv("./data/" + "Data_API.csv")
+path = 'C:/Users/khelp/OneDrive/Desktop/4. semester/Fagprojekt/02466---Project-work/data/'
+dataset = "Data_API.csv"
+df = pd.read_csv(path + dataset)
 
 cryptos = ['0xBTC','1MT','2XDN','ABST','AMPL','ANRX','ARCONA','ART','ASLT','ATRI',
  'AVRT','B0T','BAEPAY','BASED','BAT','BLVD','BON','BONDLY','BONES','BOOB',
@@ -30,7 +32,7 @@ nft_dict = defaultdict(lambda:set())
 seller_dict = defaultdict(lambda:set())
 buyer_dict = defaultdict(lambda:set())
 
-variables = zip(df["Unique_id_collection"],df["Seller_address"],df["Buyer_address"],df["Crypto"])
+variables = zip(df["Unique_id_collection"], df["Seller_address"],df["Buyer_address"],df["Crypto"])
 
 i = 0
 for nft, seller, buyer, crypto in variables:
@@ -38,8 +40,8 @@ for nft, seller, buyer, crypto in variables:
         print(i)
     i += 1
     nft_dict[nft].add(crypto)
-    seller_dict[nft].add(crypto)
-    buyer_dict[nft].add(crypto)
+    seller_dict[seller].add(crypto)
+    buyer_dict[buyer].add(crypto)
 
 nfts = np.unique(df["Unique_id_collection"])
 sellers = np.unique(df["Seller_address"])

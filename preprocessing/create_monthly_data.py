@@ -11,6 +11,7 @@ from dateutil.relativedelta import relativedelta
 def main():
     # define path for storing data
     path = "./data/"
+    dataset_name = "Data_API.csv"
     
     # define start and end
     start = datetime.datetime(2019, 1, 1)
@@ -29,7 +30,7 @@ def main():
         min_date = datetime.datetime(2022, 10, 1)
         max_date = datetime.datetime(2014, 10, 1)
         if not os.path.exists(store_path):
-            for chunk in pd.read_csv(path + "Data_API.csv", chunksize=10000, parse_dates=[18]):
+            for chunk in pd.read_csv(path + dataset_name, chunksize=10000, parse_dates=[18]):
                 if max(chunk["Datetime_updated"]) > max_date:
                     max_date = max(chunk["Datetime_updated"])
                 if min(chunk["Datetime_updated"]) < min_date:

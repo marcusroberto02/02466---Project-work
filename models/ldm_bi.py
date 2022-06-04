@@ -25,7 +25,7 @@ else:
 # j corresponds to traders
 
 class LDM_BI(nn.Module):
-    def __init__(self,sparse_i,sparse_j,sparse_w,nft_size,trader_size,latent_dim,nft_sample_size,trader_sample_size,sparse_i_test=None,sparse_j_test=None,sparse_w_test=None):
+    def __init__(self,sparse_i,sparse_j,sparse_w,nft_size,trader_size,latent_dim,nft_sample_size,test_batch_size=1000,sparse_i_test=None,sparse_j_test=None,sparse_w_test=None):
         super(LDM_BI, self).__init__()
         # input sizes
         self.nft_size = nft_size
@@ -52,8 +52,13 @@ class LDM_BI(nn.Module):
         self.sampling_weights_nfts = torch.ones(self.nft_size,device = device)
         self.sampling_weights_traders=torch.ones(self.trader_size,device = device)
         self.nft_sample_size=nft_sample_size
-        self.trader_sample_size =trader_sample_size
 
+        # size of each test_batch
+        self.test_size = self.sparse_i_test.size(0)
+        self.sampling_weights_test = torch.ones(self.test_size,device=device)
+
+        # size of each test batch
+        self.test_batch_size = test_batch_size
 
         # PARAMETERS
         # nft embeddings
@@ -108,9 +113,49 @@ class LDM_BI(nn.Module):
 
         return sample_i_idx, sample_j_idx, sample_weights
 
+    def create_test_batch(self):
+        sample_idx = torch.multinomial(self.sampling_weights_test,self.test_batch_size,replacement=False)
+
+        # positive class
+        test_i_pos = self.sparse_i_test[sample_idx]
+        test_j_pos = self.sparse_j_test[sample_idx]
+
+        # negative class
+        test_i_neg = torch.randint(0,self.nft_size,size=(self.test_batch_size,))
+        test_j_neg = torch.randint(0,self.trader_size,size=(self.test_batch_size,))
+        
+        return test_i_pos, test_j_pos, test_i_neg, test_j_neg
+
+     
     def link_prediction(self):
         # apply link prediction to the test set
         with torch.no_grad():
+            test_i_pos,test_j_pos,test_i_neg,test_j_neg = self.create_test_batch()
+
+            # get lambda values for negative edges
+            rates_neg = torch.zeros(self.test_batch_size)
+            for t in range(self.test_batch_size):
+                i,j = test_i_neg[t],test_j_neg[t]
+                gamma_i = self.gamma[i]
+                delta_j = self.delta[j]
+                zq_dist = ((self.latent_z[i]-self.latent_q[j]+1e-06)**2).sum(-1)**0.5
+                rates_neg[t] = torch.exp(gamma_i+delta_j-zq_dist)
+
+            # get lambda values for positive edges
+            rates_pos = torch.zeros(self.test_batch_size)
+            for t in range(self.test_batch_size):
+                i,j = test_i_pos[t],test_j_pos[t]
+                gamma_i = self.gamma[i]
+                delta_j = self.delta[j]
+                zq_dist = ((self.latent_z[i]-self.latent_q[j]+1e-06)**2).sum(-1)**0.5
+                rates_pos[t] = torch.exp(gamma_i+delta_j-zq_dist)
+
+            self.rates = torch.cat((rates_neg,rates_pos))
+            self.target=torch.cat((torch.zeros(self.test_batch_size),torch.ones(self.test_batch_size)))
+            precision, tpr, thresholds = metrics.precision_recall_curve(self.target.cpu().data.numpy(), self.rates.cpu().data.numpy())
+
+
+            """
             # get ||z_i-q_j||
             #zq_dist = ((((self.latent_z[self.sparse_i_test]-self.latent_q[self.sparse_j_test]+1e-06)**2).sum(-1))**0.5)
             zq_dist = torch.cdist(self.latent_z[torch.unique(self.sparse_i_test)]+1e-06,self.latent_q[torch.unique(self.sparse_j_test)],p=2)+1e-06
@@ -128,9 +173,10 @@ class LDM_BI(nn.Module):
             # flatten the matrices to use as input for the sklearn matrix 
             self.rates = self.rates.flatten()
             self.target = self.target.flatten()
-            precision, tpr, thresholds = metrics.precision_recall_curve(self.target.data.numpy(), self.rates.cpu().data.numpy())
+            precision, tpr, thresholds = metrics.precision_recall_curve(self.target.cpu().data.numpy(), self.rates.cpu().data.numpy())
+            """
 
-        return metrics.roc_auc_score(self.target.data.numpy(),self.rates.cpu().data.numpy()),metrics.auc(tpr,precision)
+        return metrics.roc_auc_score(self.target.cpu().data.numpy(),self.rates.cpu().data.numpy()),metrics.auc(tpr,precision)
     
 #################################################################
 '''
@@ -145,7 +191,15 @@ latent_dims=[2]
 # Total model iterations
 total_epochs=1
 # Dataset Name
-dataset='./data/2019-01'
+# for the hpc
+#path = '/zhome/45/e/155478/Desktop/02466---Project-work/data'
+#blockchain = '/ETH'
+#date = '/2020-10'
+#dataset = path + blockchain + date
+
+# for testing on local pc
+dataset = "./data/ETH/2020-10"
+
 # Learning rates
 lrs=[0.1]
 # Total independent runs of the model
@@ -185,7 +239,7 @@ for run in range(1,total_runs+1):
             
             # initialize model
             model = LDM_BI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_w=sparse_w,nft_size=N,trader_size=T,
-                           latent_dim=latent_dim,nft_sample_size=1000,trader_sample_size=2,
+                           latent_dim=latent_dim,nft_sample_size=1000,
                            sparse_i_test=sparse_i_test,sparse_j_test=sparse_j_test,sparse_w_test=sparse_w_test).to(device)         
 
             optimizer = optim.Adam(model.parameters(), lr=lr)  
@@ -211,6 +265,7 @@ for run in range(1,total_runs+1):
                     # AUC-ROC and PR-AUC
                     # Receiver operating characteristic-area under curve   AND precision recal-area under curve
                     roc,pr=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr
+                    #roc,pr = 0,0
                     #print('Epoch: ',epoch)
                     #print('ROC:',roc)
                     #print('PR:',pr)
@@ -224,6 +279,7 @@ for run in range(1,total_runs+1):
             torch.save(model.latent_z.detach().cpu(),results_path+"/nft_embeddings")
             torch.save(model.latent_q.detach().cpu(),results_path+"/trader_embeddings")
             roc,pr=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr
+            #roc, pr = 0,0
             #print('dim',latent_dim)
             #print('Epoch: ',epoch)
             #print('ROC:',roc)

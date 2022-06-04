@@ -34,7 +34,7 @@ else:
 # j corresponds to traders
 
 class LDM_TRI(nn.Module):
-    def __init__(self,sparse_i,sparse_j,sparse_k,sparse_w,nft_size,seller_size,buyer_size,latent_dim,nft_sample_size,sparse_i_test=None,sparse_j_test=None,sparse_k_test=None,sparse_w_test=None):
+    def __init__(self,sparse_i,sparse_j,sparse_k,sparse_w,nft_size,seller_size,buyer_size,latent_dim,nft_sample_size,test_batch_size=1000,sparse_i_test=None,sparse_j_test=None,sparse_k_test=None,sparse_w_test=None):
         super(LDM_TRI, self).__init__()
         # input sizes
         self.nft_size = nft_size
@@ -63,6 +63,13 @@ class LDM_TRI(nn.Module):
         # for sampling
         self.sampling_weights=torch.ones(self.nft_size,device=device)
         self.nft_sample_size=nft_sample_size
+
+        # size of each test_batch
+        self.test_size = self.sparse_i_test.size(0)
+        self.sampling_weights_test = torch.ones(self.test_size,device=device)
+
+        # size of each test batch
+        self.test_batch_size = test_batch_size
 
         # PARAMETERS
         # nft embeddings
@@ -141,9 +148,55 @@ class LDM_TRI(nn.Module):
 
         return sample_i_idx, sample_j_idx, sample_k_idx, sample_weights
     
+    def create_test_batch(self):
+        sample_idx = torch.multinomial(self.sampling_weights_test,self.test_batch_size,replacement=False)
+
+        # positive class
+        test_i_pos = self.sparse_i_test[sample_idx]
+        test_j_pos = self.sparse_j_test[sample_idx]
+        test_k_pos = self.sparse_k_test[sample_idx]
+
+        # negative class
+        test_i_neg = torch.randint(0,self.nft_size,size=(self.test_batch_size,))
+        test_j_neg = torch.randint(0,self.seller_size,size=(self.test_batch_size,))
+        test_k_neg = torch.randint(0,self.buyer_size,size=(self.test_batch_size,))
+        
+        return test_i_pos, test_j_pos, test_k_pos, test_i_neg, test_j_neg, test_k_neg
+
+
     def link_prediction(self):
-        # apply link prediction to the test set
+         # apply link prediction to the test set
         with torch.no_grad():
+            test_i_pos,test_j_pos,test_k_pos,test_i_neg,test_j_neg,test_k_neg = self.create_test_batch()
+
+            # get lambda values for negative edges
+            rates_neg = torch.zeros(self.test_batch_size)
+            for t in range(self.test_batch_size):
+                i,j,k = test_i_neg[t],test_j_neg[t],test_k_neg[t]
+                rho_i = self.rho[i]
+                nu_j = self.nu[j]
+                tau_k = self.tau[k]
+                lr_dist = ((self.latent_l[i]-self.latent_r[j]+1e-06)**2).sum(-1)**0.5
+                lu_dist = ((self.latent_l[i]-self.latent_u[k]+1e-06)**2).sum(-1)**0.5
+                rates_neg[t] = torch.exp(rho_i+nu_j+tau_k-lr_dist-lu_dist)
+
+            # get lambda values for positive edges
+            rates_pos = torch.zeros(self.test_batch_size)
+            for t in range(self.test_batch_size):
+                i,j,k = test_i_pos[t],test_j_pos[t],test_k_pos[t]
+                rho_i = self.rho[i]
+                nu_j = self.nu[j]
+                tau_k = self.tau[k]
+                lr_dist = ((self.latent_l[i]-self.latent_r[j]+1e-06)**2).sum(-1)**0.5
+                lu_dist = ((self.latent_l[i]-self.latent_u[k]+1e-06)**2).sum(-1)**0.5
+                rates_pos[t] = torch.exp(rho_i+nu_j+tau_k-lr_dist-lu_dist)
+
+            self.rates = torch.cat((rates_neg,rates_pos))
+            self.target=torch.cat((torch.zeros(self.test_batch_size),torch.ones(self.test_batch_size)))
+            precision, tpr, thresholds = metrics.precision_recall_curve(self.target.cpu().data.numpy(), self.rates.cpu().data.numpy())
+
+
+            """"
             d_rl = torch.cdist(self.latent_r[torch.unique(self.sparse_j_test)]+1e-06,self.latent_l[torch.unique(self.sparse_i_test)],p=2)+1e-06
             d_ul = torch.cdist(self.latent_u[torch.unique(self.sparse_k_test)]+1e-06,self.latent_l[torch.unique(self.sparse_i_test)],p=2)+1e-06
             
@@ -172,9 +225,10 @@ class LDM_TRI(nn.Module):
             # flatten the matrices to use as input for the sklearn matrix 
             self.rates = self.rates.flatten()
             self.target = self.target.flatten()
-            precision, tpr, thresholds = metrics.precision_recall_curve(self.target.data.numpy(), self.rates.cpu().data.numpy())
+            precision, tpr, thresholds = metrics.precision_recall_curve(self.target.cpu().data.numpy(), self.rates.cpu().data.numpy())
+            """
 
-        return metrics.roc_auc_score(self.target.data.numpy(),self.rates.cpu().data.numpy()),metrics.auc(tpr,precision)
+        return metrics.roc_auc_score(self.target.cpu().data.numpy(),self.rates.cpu().data.numpy()),metrics.auc(tpr,precision)
 
 
     
@@ -192,7 +246,15 @@ latent_dims=[2]
 # Total model iterations
 total_epochs=1
 # Dataset Name
-dataset='./data/2019-01'
+# for the hpc
+#path = '/zhome/45/e/155478/Desktop/02466---Project-work/data'
+#blockchain = '/ETH'
+#date = '/2020-10'
+#dataset = path + blockchain + date
+
+# for testing on local pc
+dataset = "./data/ETH/2020-10"
+
 # Learning rates
 lrs=[0.1]
 # Total independent runs of the model
@@ -265,6 +327,7 @@ for run in range(1,total_runs+1):
                     # AUC-ROC and PR-AUC
                     # Receiver operating characteristic-area under curve   AND precision recal-area under curve
                     roc,pr=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr
+                    #roc, pr = 0,0
                     #print('Epoch: ',epoch)
                     #print('ROC:',roc)
                     #print('PR:',pr)
@@ -282,6 +345,7 @@ for run in range(1,total_runs+1):
             torch.save(model.latent_u.detach().cpu(),results_path + "/buyer_embeddings")
 
             roc,pr=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr
+            #roc,pr = 0,0
             #print('dim',latent_dim)
             #print('Epoch: ',epoch)
             #print('ROC:',roc)
@@ -297,4 +361,4 @@ for run in range(1,total_runs+1):
             np.savetxt(filename_pr,(PR),delimiter=' ')
 
         
-
+print("hey")

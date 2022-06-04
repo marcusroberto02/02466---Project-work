@@ -1,7 +1,7 @@
 import pandas as pd
 
 # name of the data set
-name = "data_ETH"
+# name = "data_ETH"
 name = "data_WAX"
 cryptos = ['WAX']
 # choose which cryptos should be included

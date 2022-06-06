@@ -14,11 +14,11 @@ def main():
     dataset_name = "data_ETH.csv"
     
     # define start and end
-    start = datetime.datetime(2020, 10, 1)
+    start = datetime.datetime(2020, 9, 1)
     end = start + relativedelta(months =+ 1)
 
     # mark last month for storing data
-    last_month = datetime.datetime(2020, 11, 1)
+    last_month = datetime.datetime(2020, 10, 1)
     
     while start < last_month:
         dataset = pd.DataFrame()
@@ -53,9 +53,9 @@ def main():
             # save entire dataframe
             save_data(dataset,end,store_path)
 
-            #Update the start and end dates
-            start = end
-            end = end + relativedelta(months=+1)
+        #Update the start and end dates
+        start = end
+        end = end + relativedelta(months=+1)
 
 # Create directories for the current month
 def create_directories(path):
@@ -70,11 +70,11 @@ def create_directories(path):
     os.makedirs(path + "/results/bi")
     os.makedirs(path + "/results/tri")
 
-def save_sparse_data_bi(df,path):
+def save_sparse_data_bi(df,df_cat,path):
     store_path = path + "/bi/"
     df["Unique_id_collection"].to_csv(store_path + 'sparse_i.txt',header=None,index=None)
     df["Trader_address"].to_csv(store_path + 'sparse_j.txt',header=None,index=None)
-    df["Category"].to_csv(store_path + 'sparse_c.txt',header=None,index=None)
+    df_cat["Category"].to_csv(store_path + 'sparse_c.txt',header=None,index=None)
     df["Count"].to_csv(store_path + 'sparse_w.txt',header=None,index=None)
 
     with open(store_path + "info.txt", "w") as f:
@@ -108,21 +108,24 @@ def create_sparse_data_bi(df,end,path):
     df_train = df_train.groupby(["Unique_id_collection", "Trader_address", "Category"]).size().reset_index()
     df_test = df_test.groupby(["Unique_id_collection","Trader_address","Category"]).size().reset_index()
     
+    # for getting categories
+    df_cat = df_train.groupby(["Unique_id_collection","Category"]).size().reset_index()
+
     # rename count column
     df_train.columns = ["Unique_id_collection","Trader_address","Category","Count"]
     df_test.columns = ["Unique_id_collection","Trader_address","Category","Count"]
 
     # save files
-    save_sparse_data_bi(df_train,path+"/train")
-    save_sparse_data_bi(df_test,path+"/test")
+    save_sparse_data_bi(df_train,df_cat,path+"/train")
+    save_sparse_data_bi(df_test,df_cat,path+"/test")
     
-def save_sparse_data_tri(df,path):
+def save_sparse_data_tri(df,df_cat,path):
     store_path = path + "/tri/"
     # save files
     df["Unique_id_collection"].to_csv(store_path +'sparse_i.txt',header=None,index=None)
     df["Seller_address"].to_csv(store_path + 'sparse_j.txt',header=None,index=None)
     df["Buyer_address"].to_csv(store_path + 'sparse_k.txt',header=None,index=None)
-    df["Category"].to_csv(store_path + 'sparse_c.txt',header=None,index=None)
+    df_cat["Category"].to_csv(store_path + 'sparse_c.txt',header=None,index=None)
     df["Count"].to_csv(store_path + 'sparse_w.txt',header=None,index=None)
     #write to a text file
     with open(store_path + "info.txt", "w") as f:
@@ -159,12 +162,15 @@ def create_sparse_data_tri(df,end,path):
     df_train = df_train.groupby(["Unique_id_collection","Seller_address","Buyer_address","Category"]).size().reset_index()
     df_test = df_test.groupby(["Unique_id_collection","Seller_address","Buyer_address","Category"]).size().reset_index()
 
+    # for getting categories
+    df_cat = df_train.groupby(["Unique_id_collection","Category"]).size().reset_index()
+
     # rename count column
     df_train.columns = ["Unique_id_collection","Seller_address","Buyer_address","Category","Count"]
     df_test.columns = ["Unique_id_collection","Seller_address","Buyer_address","Category","Count"]
 
-    save_sparse_data_tri(df_train,path+"/train")
-    save_sparse_data_tri(df_test,path+"/test")
+    save_sparse_data_tri(df_train,df_cat,path+"/train")
+    save_sparse_data_tri(df_test,df_cat,path+"/test")
 
 def save_data(df,end,path):
     # split into train and test based on the date

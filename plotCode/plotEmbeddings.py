@@ -22,18 +22,22 @@ class embedPlotterBi(embedPlotter):
         super().__init__(path)
 
     def load_embeddings(self):
-        self.z = torch.load(self.path + "/results/bi/nft_embeddings").detach().numpy()
-        self.q = torch.load(self.path + "/results/bi/trader_embeddings").detach().numpy()
+        self.z = torch.load(self.path + "/bi/results/nft_embeddings").detach().numpy()
+        self.q = torch.load(self.path + "/bi/results/trader_embeddings").detach().numpy()
     
     def scatter(self):
-        plt.scatter(*zip(*self.z[:,:2]),s=0.1)
-        plt.scatter(*zip(*self.q[:,:2]),s=0.1)
+        plt.scatter(*zip(*self.z[:,:2]),s=0.1,label="NFTs")
+        plt.scatter(*zip(*self.q[:,:2]),s=0.1,label="Traders")
+        plt.legend(markerscale=15)
+        plt.title("Scatter plot - Bipartite model")
         plt.show()
 
     def categoryPlot(self):
-        categories = list(np.loadtxt(path + "/train/bi/sparse_c.txt",dtype='str'))
-        df = pd.DataFrame(dict(categories = categories))
-        plt.scatter(*zip(*self.z[:,:2]),s=0.1,c=df["categories"].map(colors))
+        categories = np.loadtxt(path + "/bi/train/sparse_c.txt",dtype='str')
+        for category, color in colors.items():
+            plt.scatter(*zip(*self.z[categories==category][:,:2]),s=0.1,c=color,label=category)
+        plt.legend(markerscale=15)
+        plt.title("Category plot - Bipartite model")
         plt.show()
 
 class embedPlotterTri(embedPlotter):
@@ -41,34 +45,38 @@ class embedPlotterTri(embedPlotter):
         super().__init__(path)
 
     def load_embeddings(self):
-        self.l = torch.load(self.path + "/results/tri/nft_embeddings").detach().numpy()
-        self.r = torch.load(self.path + "/results/tri/seller_embeddings").detach().numpy()
-        self.u = torch.load(self.path + "/results/tri/buyer_embeddings").detach().numpy()
+        self.l = torch.load(self.path + "/tri/results/nft_embeddings").detach().numpy()
+        self.r = torch.load(self.path + "/tri/results/seller_embeddings").detach().numpy()
+        self.u = torch.load(self.path + "/tri/results/buyer_embeddings").detach().numpy()
     
     def scatter(self):
-        plt.scatter(*zip(*self.l[:,:2]),s=0.1)
-        plt.scatter(*zip(*self.r[:,:2]),s=0.1)
-        plt.scatter(*zip(*self.u[:,:2]),s=0.1)
+        plt.scatter(*zip(*self.l[:,:2]),s=0.1,label="NFTs")
+        plt.scatter(*zip(*self.r[:,:2]),s=0.1,label="Sellers")
+        plt.scatter(*zip(*self.u[:,:2]),s=0.1,label="Buyers")
+        plt.legend(markerscale=15)
+        plt.title("Scatter plot - Tripartite model")
         plt.show()
     
     def categoryPlot(self):
-        categories = list(np.loadtxt(path + "/train/tri/sparse_c.txt",dtype='str'))
-        df = pd.DataFrame(dict(categories = categories))
-        plt.scatter(*zip(*self.l[:,:2]),s=0.1,c=df["categories"].map(colors))
+        categories = np.loadtxt(path + "/tri/train/sparse_c.txt",dtype='str')
+        for category, color in colors.items():
+            plt.scatter(*zip(*self.l[categories==category][:,:2]),s=0.1,c=color,label=category)
+        plt.legend(markerscale=15)
+        plt.title("Category plot - Tripartite model")
         plt.show()
 
         
-path = "./data/ETH/2020-09"
+path = "./data/ETH/2020-10"
 
 # embed plot structure bi
 epb = embedPlotterBi(path)
-# epb.scatter()
+epb.scatter()
 epb.categoryPlot()
 
 # embed plot structure tri
 ept = embedPlotterTri(path)
-# ept.scatter()
-
+ept.scatter()
+ept.categoryPlot()
 
 
 

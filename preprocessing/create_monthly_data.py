@@ -14,11 +14,11 @@ def main():
     dataset_name = "data_ETH.csv"
     
     # define start and end
-    start = datetime.datetime(2020, 9, 1)
+    start = datetime.datetime(2020, 10, 1)
     end = start + relativedelta(months =+ 1)
 
     # mark last month for storing data
-    last_month = datetime.datetime(2020, 10, 1)
+    last_month = datetime.datetime(2020, 11, 1)
     
     while start < last_month:
         dataset = pd.DataFrame()
@@ -60,24 +60,23 @@ def main():
 # Create directories for the current month
 def create_directories(path):
     os.makedirs(path)
-    os.makedirs(path + "/train")
-    os.makedirs(path + "/train/bi")
-    os.makedirs(path + "/train/tri")
-    os.makedirs(path + "/test")
-    os.makedirs(path + "/test/bi")
-    os.makedirs(path + "/test/tri")
-    os.makedirs(path + "/results")
-    os.makedirs(path + "/results/bi")
-    os.makedirs(path + "/results/tri")
+    os.makedirs(path + "/bi")
+    os.makedirs(path + "/bi/train")
+    os.makedirs(path + "/bi/test")
+    os.makedirs(path + "/bi/results")
+    os.makedirs(path + "/tri")
+    os.makedirs(path + "/tri/train")
+    os.makedirs(path + "/tri/test")
+    os.makedirs(path + "/tri/results")
 
 def save_sparse_data_bi(df,df_cat,path):
-    store_path = path + "/bi/"
-    df["Unique_id_collection"].to_csv(store_path + 'sparse_i.txt',header=None,index=None)
-    df["Trader_address"].to_csv(store_path + 'sparse_j.txt',header=None,index=None)
-    df_cat["Category"].to_csv(store_path + 'sparse_c.txt',header=None,index=None)
-    df["Count"].to_csv(store_path + 'sparse_w.txt',header=None,index=None)
+    store_path = path
+    df["Unique_id_collection"].to_csv(store_path + '/sparse_i.txt',header=None,index=None)
+    df["Trader_address"].to_csv(store_path + '/sparse_j.txt',header=None,index=None)
+    df_cat["Category"].to_csv(store_path + '/sparse_c.txt',header=None,index=None)
+    df["Count"].to_csv(store_path + '/sparse_w.txt',header=None,index=None)
 
-    with open(store_path + "info.txt", "w") as f:
+    with open(store_path + "/info.txt", "w") as f:
         f.write("Number of unique traders: " + str(len(set(df["Trader_address"]))) + "\n")
         f.write("Number of unique NFTs: " + str(len(set(df["Unique_id_collection"]))) + "\n")
         f.write("Number of unique categories: " + str(len(set(df["Category"]))))
@@ -116,19 +115,19 @@ def create_sparse_data_bi(df,end,path):
     df_test.columns = ["Unique_id_collection","Trader_address","Category","Count"]
 
     # save files
-    save_sparse_data_bi(df_train,df_cat,path+"/train")
-    save_sparse_data_bi(df_test,df_cat,path+"/test")
+    save_sparse_data_bi(df_train,df_cat,path+"/bi/train")
+    save_sparse_data_bi(df_test,df_cat,path+"/bi/test")
     
 def save_sparse_data_tri(df,df_cat,path):
-    store_path = path + "/tri/"
+    store_path = path
     # save files
-    df["Unique_id_collection"].to_csv(store_path +'sparse_i.txt',header=None,index=None)
-    df["Seller_address"].to_csv(store_path + 'sparse_j.txt',header=None,index=None)
-    df["Buyer_address"].to_csv(store_path + 'sparse_k.txt',header=None,index=None)
-    df_cat["Category"].to_csv(store_path + 'sparse_c.txt',header=None,index=None)
-    df["Count"].to_csv(store_path + 'sparse_w.txt',header=None,index=None)
+    df["Unique_id_collection"].to_csv(store_path +'/sparse_i.txt',header=None,index=None)
+    df["Seller_address"].to_csv(store_path + '/sparse_j.txt',header=None,index=None)
+    df["Buyer_address"].to_csv(store_path + '/sparse_k.txt',header=None,index=None)
+    df_cat["Category"].to_csv(store_path + '/sparse_c.txt',header=None,index=None)
+    df["Count"].to_csv(store_path + '/sparse_w.txt',header=None,index=None)
     #write to a text file
-    with open(store_path + "info.txt", "w") as f:
+    with open(store_path + "/info.txt", "w") as f:
         f.write("Number of unique sellers: " + str(len(set(df["Seller_address"]))) + "\n")
         f.write("Number of unique buyers: " + str(len(set(df["Buyer_address"]))) + "\n")
         f.write("Number of unique NFTs: " + str(len(set(df["Unique_id_collection"]))) + "\n")
@@ -169,8 +168,8 @@ def create_sparse_data_tri(df,end,path):
     df_train.columns = ["Unique_id_collection","Seller_address","Buyer_address","Category","Count"]
     df_test.columns = ["Unique_id_collection","Seller_address","Buyer_address","Category","Count"]
 
-    save_sparse_data_tri(df_train,df_cat,path+"/train")
-    save_sparse_data_tri(df_test,df_cat,path+"/test")
+    save_sparse_data_tri(df_train,df_cat,path+"/tri/train")
+    save_sparse_data_tri(df_test,df_cat,path+"/tri/test")
 
 def save_data(df,end,path):
     # split into train and test based on the date
@@ -178,8 +177,8 @@ def save_data(df,end,path):
     test = df[df["Datetime_updated"] >= end]
     
     #Save test and train datasets
-    train.to_csv(path + "/train/data_train.csv")
-    test.to_csv(path + "/test/data_test.csv")
+    train.to_csv(path + "/data_train.csv")
+    test.to_csv(path + "/data_test.csv")
 
 main()
 

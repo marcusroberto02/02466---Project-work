@@ -6,7 +6,7 @@ from sklearn import metrics
 def score_epoch(mtype, score_type):
 
     epochs = np.arange(0,301)*100
-    roc = np.loadtxt("./data/ETH/2020-10/" + mtype + "/results/"+score_type + "_train.txt")
+    roc = np.loadtxt("./data/ETH/2020-10/" + mtype + "/results/D9/"+score_type + "_train.txt")
     
     plt.title(score_type + " scores as a function of epochs - " + mtype + "partite model")
     plt.ylabel(score_type + " score at given epoch")

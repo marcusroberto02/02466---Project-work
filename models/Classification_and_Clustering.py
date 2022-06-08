@@ -26,7 +26,7 @@ Node classification
 #################################################################
 
 #load nft embeddings as array in X and categories in y
-X = torch.load(path + "/bi/results/nft_embeddings").detach().numpy()
+X = torch.load(path + "/bi/results/D2/nft_embeddings").detach().numpy()
 y = np.loadtxt(path + "/bi/train/sparse_c.txt",dtype="str").reshape(-1,1)
 oversample = RandomOverSampler(sampling_strategy="not majority")
 X,y = oversample.fit_resample(X,y)
@@ -97,19 +97,19 @@ label = kmeans.labels_
 u_labels = np.unique(label)
 
 fig = plt.figure(figsize = (12,12))
-ax1 = fig.add_subplot(121,projection='3d')
-ax2 = fig.add_subplot(122,projection='3d')
+ax1 = fig.add_subplot(121)
+ax2 = fig.add_subplot(122)
 #fig, axs = plt.subplots(1, 2, sharex=True, sharey=True)
 
 for i in u_labels:
-    ax1.scatter3D(X[label == i, 0], X[label == i, 1], X[label == i,2], s=0.1, label='cluster %d' % i)
+    ax1.scatter(X[label == i, 0], X[label == i, 1], s=0.1, label='cluster %d' % i)
 #axs[0].legend()
 ax1.set_title("Kmeans")
 
 colors = {'Art':'green', 'Collectible':'blue', 'Games':'red','Metaverse':'orange','Other':'purple','Utility':'brown'}
 
 for category, color in colors.items():
-    ax2.scatter3D(*zip(*X[y==category][:,:3]),s=0.1,c=color,label=category)
+    ax2.scatter(*zip(*X[y==category][:,:2]),s=0.1,c=color,label=category)
 ax2.legend(loc="upper right", markerscale=15)
 ax2.set_title("True classification - Bipartite model")
 

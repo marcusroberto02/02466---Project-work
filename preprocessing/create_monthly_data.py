@@ -1,6 +1,6 @@
 import os
 import datetime
-
+import numpy as np
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 
@@ -151,7 +151,22 @@ def create_sparse_data_tri(df,end,path):
     # remove all rows in test set that contains unseen nfts or traders
     # concatenate train and test to get identical ids
     df = pd.concat([df_train,df_test])
-    df[facts] = df[facts].apply(lambda x: pd.factorize(x)[0])
+    nft = df["Unique_id_collection"].unique()
+    seller = df["Seller_address"].unique()
+    buyer = df["Buyer_address"].unique()
+    
+    trader_df=pd.DataFrame(np.append(seller,buyer))
+    traders = trader_df[0].unique()
+
+    nft_cat = pd.CategoricalDtype(categories=sorted(nft))
+    trader_cat = pd.CategoricalDtype(categories=sorted(traders))
+    
+    df["Unique_id_collection"] = df["Unique_id_collection"].astype(nft_cat).cat.codes
+    df["Seller_address"] = df["Seller_address"].astype(trader_cat).cat.codes
+    df["Buyer_address"] = df["Buyer_address"].astype(trader_cat).cat.codes
+
+    
+    #df[facts] = df[facts].apply(lambda x: pd.factorize(x)[0])
     
     # split into train and test based on the date
     df_test = df[df["Datetime_updated"] >= end]

@@ -69,11 +69,10 @@ def create_directories(path):
     os.makedirs(path + "/tri/test")
     os.makedirs(path + "/tri/results")
 
-def save_sparse_data_bi(df,df_cat,path):
+def save_sparse_data_bi(df,path):
     store_path = path
     df["Unique_id_collection"].to_csv(store_path + '/sparse_i.txt',header=None,index=None)
     df["Trader_address"].to_csv(store_path + '/sparse_j.txt',header=None,index=None)
-    df_cat["Category"].to_csv(store_path + '/sparse_c.txt',header=None,index=None)
     df["Count"].to_csv(store_path + '/sparse_w.txt',header=None,index=None)
 
     with open(store_path + "/info.txt", "w") as f:
@@ -109,22 +108,22 @@ def create_sparse_data_bi(df,end,path):
     
     # for getting categories
     df_cat = df_train.groupby(["Unique_id_collection","Category"]).size().reset_index()
+    df_cat["Category"].to_csv(path + '/tri/sparse_c.txt',header=None,index=None)
 
     # rename count column
     df_train.columns = ["Unique_id_collection","Trader_address","Category","Count"]
     df_test.columns = ["Unique_id_collection","Trader_address","Category","Count"]
 
     # save files
-    save_sparse_data_bi(df_train,df_cat,path+"/bi/train")
-    save_sparse_data_bi(df_test,df_cat,path+"/bi/test")
+    save_sparse_data_bi(df_train,path+"/bi/train")
+    save_sparse_data_bi(df_test,path+"/bi/test")
     
-def save_sparse_data_tri(df,df_cat,path):
+def save_sparse_data_tri(df,path):
     store_path = path
     # save files
     df["Unique_id_collection"].to_csv(store_path +'/sparse_i.txt',header=None,index=None)
     df["Seller_address"].to_csv(store_path + '/sparse_j.txt',header=None,index=None)
     df["Buyer_address"].to_csv(store_path + '/sparse_k.txt',header=None,index=None)
-    df_cat["Category"].to_csv(store_path + '/sparse_c.txt',header=None,index=None)
     df["Count"].to_csv(store_path + '/sparse_w.txt',header=None,index=None)
     #write to a text file
     with open(store_path + "/info.txt", "w") as f:
@@ -150,24 +149,27 @@ def create_sparse_data_tri(df,end,path):
     # this is done to avoid the same categories being used in both train and test
     # remove all rows in test set that contains unseen nfts or traders
     # concatenate train and test to get identical ids
-    df = pd.concat([df_train,df_test])
-    nft = df["Unique_id_collection"].unique()
-    seller = df["Seller_address"].unique()
-    buyer = df["Buyer_address"].unique()
+    df = pd.concat([df_train,df_test]).reset_index(drop=True)
+    df[facts] = df[facts].apply(lambda x: pd.factorize(x)[0])
     
-    trader_df=pd.DataFrame(np.append(seller,buyer))
-    traders = trader_df[0].unique()
+    df_old  = pd.concat([df_train,df_test]).reset_index(drop=True)
 
-    nft_cat = pd.CategoricalDtype(categories=sorted(nft))
-    trader_cat = pd.CategoricalDtype(categories=sorted(traders))
-    
-    df["Unique_id_collection"] = df["Unique_id_collection"].astype(nft_cat).cat.codes
-    df["Seller_address"] = df["Seller_address"].astype(trader_cat).cat.codes
-    df["Buyer_address"] = df["Buyer_address"].astype(trader_cat).cat.codes
+    # create new dataframes based on the seller and buyer address column
+    df1 = pd.DataFrame({"wallet":df_old["Seller_address"],"ei_seller":df["Seller_address"]}).drop_duplicates()
+    df2 = pd.DataFrame({"wallet":df_old["Buyer_address"],"ei_buyer" : df["Buyer_address"]}).drop_duplicates()
 
+    # find pairs, sole sellers and sole buyers
+    df_pairs = df1.merge(df2,how="inner",on="wallet")
+    temp1 = df1.merge(df2,how="left",on="wallet")
+    onlysellers = temp1[temp1["ei_buyer"].isna()]["ei_seller"]
+    temp2 = df1.merge(df2,how="right",on="wallet")
+    onlybuyers = temp2[temp2["ei_seller"].isna()]["ei_buyer"]
     
-    #df[facts] = df[facts].apply(lambda x: pd.factorize(x)[0])
-    
+
+    df_pairs.to_csv(path + '/tri/sellerbuyeridtable.csv',index=None)
+    onlysellers.to_csv(path + '/tri/onlysellers.txt',index=None, header = None)
+    onlybuyers.to_csv(path + '/tri/onlybuyers.txt',index=None, header = None)
+
     # split into train and test based on the date
     df_test = df[df["Datetime_updated"] >= end]
     df_train = df[df["Datetime_updated"] < end]
@@ -178,13 +180,31 @@ def create_sparse_data_tri(df,end,path):
 
     # for getting categories
     df_cat = df_train.groupby(["Unique_id_collection","Category"]).size().reset_index()
+    df_cat["Category"].to_csv(path + '/tri/sparse_c.txt',header=None,index=None)
 
     # rename count column
     df_train.columns = ["Unique_id_collection","Seller_address","Buyer_address","Category","Count"]
     df_test.columns = ["Unique_id_collection","Seller_address","Buyer_address","Category","Count"]
 
-    save_sparse_data_tri(df_train,df_cat,path+"/tri/train")
-    save_sparse_data_tri(df_test,df_cat,path+"/tri/test")
+
+    #maybe move the df_cat to the outer directory!!!!!
+    save_sparse_data_tri(df_train,path+"/tri/train")
+    save_sparse_data_tri(df_test,path+"/tri/test")
+
+
+     # for getting counts of sales in each category for each seller and buyer
+    seller_counts = df_train.groupby(["Seller_address","Category"]).size().reset_index()
+    buyer_counts = df_train.groupby(["Buyer_address","Category"]).size().reset_index()
+
+    seller_counts.columns = ['Seller_address','Category','Count']
+    buyer_counts.columns = ['Buyer_address','Category','Count']
+    
+    seller_matrix = pd.DataFrame(pd.pivot_table(seller_counts,'Count', columns = "Category", index = "Seller_address", aggfunc = np.sum, fill_value = 0).to_records()).iloc[:,1:]
+    buyer_matrix  = pd.DataFrame(pd.pivot_table(buyer_counts,'Count', columns = "Category", index = "Buyer_address", aggfunc = np.sum, fill_value = 0).to_records()).iloc[:,1:]
+    
+    seller_matrix.to_csv(path + '/tri/sellercategories.csv',index=None)
+    buyer_matrix.to_csv(path + '/tri/buyercategories.csv',index=None) 
+   
 
 def save_data(df,end,path):
     # split into train and test based on the date
@@ -194,6 +214,9 @@ def save_data(df,end,path):
     #Save test and train datasets
     train.to_csv(path + "/data_train.csv")
     test.to_csv(path + "/data_test.csv")
+
+
+
 
 main()
 

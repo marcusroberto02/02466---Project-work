@@ -29,7 +29,7 @@ Node classification
 X = torch.load(path + "/bi/results/D2/nft_embeddings").detach().numpy()
 y = np.loadtxt(path + "/bi/train/sparse_c.txt",dtype="str").reshape(-1,1)
 oversample = RandomOverSampler(sampling_strategy="not majority")
-X,y = oversample.fit_resample(X,y)
+#X,y = oversample.fit_resample(X,y)
 
 # split data into train and test
 X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.25, stratify=y,random_state=42)

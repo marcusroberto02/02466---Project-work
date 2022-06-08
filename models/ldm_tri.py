@@ -18,6 +18,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import confusion_matrix, roc_auc_score, precision_score, recall_score
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score
 
 from torch_sparse import spspmm
 
@@ -35,7 +36,7 @@ else:
 # j corresponds to traders
 def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batches = 5,lrs=[0.001],total_runs = 1):
     class LDM_TRI(nn.Module):
-        def __init__(self,sparse_i,sparse_j,sparse_k,sparse_w,nft_size,seller_size,buyer_size,latent_dim,nft_sample_size,test_batch_size=1000,sparse_i_test=None,sparse_j_test=None,sparse_k_test=None,sparse_w_test=None):
+        def __init__(self,sparse_i,sparse_j,sparse_k,sparse_w,sparse_c,nft_size,seller_size,buyer_size,latent_dim,nft_sample_size,seller_matrix,buyer_matrix,test_batch_size=1000,sparse_i_test=None,sparse_j_test=None,sparse_k_test=None,sparse_w_test=None):
             super(LDM_TRI, self).__init__()
             # input sizes
             self.nft_size = nft_size
@@ -53,11 +54,19 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
             self.sparse_k_idx = sparse_k
             self.weights = sparse_w
 
+            # categories 
+            self.sparse_c = sparse_c
+
+            # matricies that stores the seller/buyer distribution across categories
+            self.seller_matrix = seller_matrix
+            self.buyer_matrix = buyer_matrix
+            
             # used for the test set
             self.sparse_i_test = sparse_i_test
             self.sparse_j_test = sparse_j_test
             self.sparse_k_test = sparse_k_test
             self.sparse_w_test = sparse_w_test
+            
 
             self.Softmax=nn.Softmax(1)
 
@@ -83,6 +92,7 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
             self.rho=nn.Parameter(torch.randn(self.nft_size,device=device))
             self.nu=nn.Parameter(torch.randn(self.seller_size,device=device))
             self.tau=nn.Parameter(torch.randn(self.buyer_size,device=device))
+
 
         #introducing the Poisson log-likelihood  
         def LSM_likelihood_bias(self,epoch):
@@ -156,7 +166,7 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
             test_i_pos = self.sparse_i_test[sample_idx]
             test_j_pos = self.sparse_j_test[sample_idx]
             test_k_pos = self.sparse_k_test[sample_idx]
-
+            
             # negative class
             test_i_neg = torch.randint(0,self.nft_size,size=(self.test_batch_size,))
             test_j_neg = torch.randint(0,self.seller_size,size=(self.test_batch_size,))
@@ -198,6 +208,40 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                 
 
             return metrics.roc_auc_score(self.target.cpu().data.numpy(),self.rates.cpu().data.numpy()),metrics.auc(tpr,precision)
+        
+        def baseline_model(self):
+            test_i_pos,test_j_pos,test_k_pos,test_i_neg,test_j_neg,test_k_neg = self.create_test_batch()
+
+            test_c_pos = [self.sparse_c[nft] for nft in test_i_pos]
+            test_c_neg = [self.sparse_c[nft] for nft in test_i_neg]
+
+            predictions = list()
+            target = [1] * self.test_batch_size + [0] * self.test_batch_size
+            for t in range(self.test_batch_size):
+                j,k,c = test_j_pos[t].item(),test_k_pos[t].item(),test_c_pos[t]
+                
+
+                if seller_matrix[c][j] > 0 and buyer_matrix[c][k] > 0:
+                    predictions.append(1)
+                else:
+                    predictions.append(0)
+
+            for t in range(self.test_batch_size):
+                j,k,c = test_j_neg[t].item(),test_k_neg[t].item(),test_c_neg[t]
+
+
+                if seller_matrix[c][j] > 0 and buyer_matrix[c][k] >0:
+                    predictions.append(1)
+                else:
+                    predictions.append(0)
+                
+                
+            accuracy = accuracy_score(target, predictions)
+
+            return accuracy
+
+            
+
 
 
         
@@ -258,15 +302,23 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                 sparse_w_test=torch.from_numpy(np.loadtxt(testset+'/sparse_w.txt')).long().to(device)
 
                 # network size
-                N=int(sparse_i.max()+1)
-                S=int(sparse_j.max()+1)
-                B=int(sparse_k.max()+1)
-                
+                N=int(len(sparse_i.unique()))
+                S=int(len(sparse_j.unique()))
+                B=int(len(sparse_k.unique()))
+
+                # categories for each nft
+                sparse_c = np.loadtxt(dataset + "/tri/sparse_c.txt",dtype='str')
+
+                # seller buyer category matrices
+                seller_matrix = pd.read_csv(dataset+"/tri/sellercategories.csv")
+                buyer_matrix = pd.read_csv(dataset+"/tri/buyercategories.csv")
+
                 # initialize model
-                model = LDM_TRI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_k=sparse_k,sparse_w=sparse_w,
+                model = LDM_TRI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_k=sparse_k,sparse_w=sparse_w,sparse_c=sparse_c,
                                 nft_size=N,seller_size=S,buyer_size=B,latent_dim=latent_dim,nft_sample_size=1000,
                                 sparse_i_test=sparse_i_test,sparse_j_test=sparse_j_test,
-                                sparse_k_test=sparse_k_test,sparse_w_test=sparse_w_test).to(device)         
+                                sparse_k_test=sparse_k_test,sparse_w_test=sparse_w_test,
+                                seller_matrix = seller_matrix, buyer_matrix = buyer_matrix).to(device)         
 
                 optimizer = optim.Adam(model.parameters(), lr=lr)
         
@@ -276,6 +328,7 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                 losses=[]
                 ROC_train=[]
                 PR_train=[]
+                baseline_model_accuracy=[]
                 # model.scaling=1
         
         
@@ -296,6 +349,8 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                         #print('Epoch: ',epoch)
                         #print('ROC:',roc)
                         #print('PR:',pr)
+                        accuracy = model.baseline_model()
+                        baseline_model_accuracy.append(accuracy)
                         ROC_train.append(roc)
                         PR_train.append(pr)
 
@@ -332,9 +387,11 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                 #print(PR)
                 filename_roc=results_path+"/roc_train.txt"
                 filename_pr=results_path+"/pr_train.txt"
+                filename_ba=results_path+"/baseline_accuracy.txt"
                 # save performance statistics
                 np.savetxt(filename_roc,(ROC_train),delimiter=' ')
                 np.savetxt(filename_pr,(PR_train),delimiter=' ')
+                np.savetxt(filename_ba,(baseline_model_accuracy),delimiter=' ')
 
                 with open(results_path + "/ROC-PR.txt", "w") as f:
                     f.write("ROC average: " + str(ROC_avg) + "\n")

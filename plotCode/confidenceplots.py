@@ -14,7 +14,7 @@ PR_scores = []
 PR_errorbars = []
 
 for d in dimensions:
-    path = "./data/ETH/2020-10/tri/results/D" + str(d)
+    path = "./data/ETH/backup_2020-10/2020-10/bi/results/D" + str(d)
     with open(path + "/ROC-PR.txt", 'r') as f:
         roc_mean,roc_std,pr_mean,pr_std = [float(l.strip().split()[-1]) for l in f.readlines()]
         ROC_scores.append(roc_mean)

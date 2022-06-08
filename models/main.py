@@ -41,7 +41,7 @@ else:
 dataset = "./data/ETH/2020-10"
 
 # model parameters
-latent_dims = [1,2,4,5]
+latent_dims = [2]
 total_epochs= 1
 n_test_batches = 5
 lrs=[0.1]

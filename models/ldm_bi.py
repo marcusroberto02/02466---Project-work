@@ -8,7 +8,9 @@ import numpy as np
 import torch.optim as optim
 import matplotlib.pyplot as plt
 from sklearn import metrics
+import pandas as pd
 import os
+from sklearn.metrics import accuracy_score
 
 from torch_sparse import spspmm
 
@@ -24,9 +26,9 @@ else:
     
 # i corresponds to NFT's
 # j corresponds to traders
-def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batches = 5,lrs=[0.001],total_runs = 1):
+def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batches = 5,lrs=[0.001],total_runs = 1,device=torch.device("cpu")):
     class LDM_BI(nn.Module):
-        def __init__(self,sparse_i,sparse_j,sparse_w,nft_size,trader_size,latent_dim,nft_sample_size,test_batch_size=1000,sparse_i_test=None,sparse_j_test=None,sparse_w_test=None):
+        def __init__(self,sparse_i,sparse_j,sparse_w,sparse_c,nft_size,trader_size,latent_dim,nft_sample_size,trader_matrix,test_batch_size=1000,sparse_i_test=None,sparse_j_test=None,sparse_w_test=None):
             super(LDM_BI, self).__init__()
             # input sizes
             self.nft_size = nft_size
@@ -41,6 +43,12 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
             self.sparse_i_idx = sparse_i
             self.sparse_j_idx = sparse_j
             self.weights = sparse_w
+            
+            # categories 
+            self.sparse_c = sparse_c
+
+            # matrices that stores the trader distribution across categories
+            self.trader_matrix = trader_matrix
 
             self.Softmax=nn.Softmax(1)
 
@@ -155,8 +163,40 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
                 self.target=torch.cat((torch.zeros(self.test_batch_size),torch.ones(self.test_batch_size)))
                 precision, tpr, thresholds = metrics.precision_recall_curve(self.target.cpu().data.numpy(), self.rates.cpu().data.numpy())
 
+                predictions = [self.rates.cpu().data.numpy() > t for t in thresholds]
 
-            return metrics.roc_auc_score(self.target.cpu().data.numpy(),self.rates.cpu().data.numpy()),metrics.auc(tpr,precision)
+                max_accuracy = max([metrics.accuracy_score(self.target.cpu().data.numpy(),p) for p in predictions])
+
+
+            return metrics.roc_auc_score(self.target.cpu().data.numpy(),self.rates.cpu().data.numpy()),metrics.auc(tpr,precision),max_accuracy
+        
+        def baseline_model(self):
+            test_i_pos,test_j_pos,test_i_neg,test_j_neg = self.create_test_batch()
+
+            test_c_pos = [self.sparse_c[nft] for nft in test_i_pos]
+            test_c_neg = [self.sparse_c[nft] for nft in test_i_neg]
+
+            predictions = []
+            target = [1] * self.test_batch_size + [0] * self.test_batch_size
+            for t in range(self.test_batch_size):
+                j,c = test_j_pos[t].item(),test_c_pos[t]
+                
+                if trader_matrix[c][j] > 0:
+                    predictions.append(1)
+                else:
+                    predictions.append(0)
+
+            for t in range(self.test_batch_size):
+                j,c = test_j_neg[t].item(),test_c_neg[t]
+
+                if trader_matrix[c][j] > 0:
+                    predictions.append(1)
+                else:
+                    predictions.append(0)
+                
+            accuracy = accuracy_score(target, predictions)
+
+            return accuracy
         
     #################################################################
     '''
@@ -213,13 +253,20 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
                 sparse_w_test=torch.from_numpy(np.loadtxt(testset+'/sparse_w.txt')).long().to(device)
 
                 # network size
-                N=int(sparse_i.max()+1)
-                T=int(sparse_j.max()+1)
+                N=int(len(sparse_i.unique()))
+                T=int(len(sparse_j.unique()))
+
+                # categories for each nft
+                sparse_c = np.loadtxt(dataset + "/bi/sparse_c.txt",dtype='str')
+
+                # trader category matrices
+                trader_matrix = pd.read_csv(dataset+"/bi/train/tradercategories.csv")
                 
                 # initialize model
-                model = LDM_BI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_w=sparse_w,nft_size=N,trader_size=T,
-                            latent_dim=latent_dim,nft_sample_size=1000,
-                            sparse_i_test=sparse_i_test,sparse_j_test=sparse_j_test,sparse_w_test=sparse_w_test).to(device)         
+                model = LDM_BI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_w=sparse_w,sparse_c=sparse_c,
+                            nft_size=N,trader_size=T,latent_dim=latent_dim,nft_sample_size=1000,
+                            sparse_i_test=sparse_i_test,sparse_j_test=sparse_j_test,sparse_w_test=sparse_w_test,
+                            trader_matrix=trader_matrix).to(device)         
 
                 optimizer = optim.Adam(model.parameters(), lr=lr)  
         
@@ -229,6 +276,8 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
                 losses=[]
                 ROC_train=[]
                 PR_train=[]
+                max_accuracy_train=[]
+                baseline_accuracy_train=[]
                 # model.scaling=1
 
                 for epoch in range(total_epochs):
@@ -243,13 +292,18 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
                     if epoch%100==0:
                         # AUC-ROC and PR-AUC
                         # Receiver operating characteristic-area under curve   AND precision recal-area under curve
-                        roc,pr=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr
+                        # and max accuracy
+                        roc,pr,max_accuracy=model.link_prediction() #perform link prediction and return auc-roc, auc-pr
                         #roc,pr = 0,0
                         #print('Epoch: ',epoch)
                         #print('ROC:',roc)
                         #print('PR:',pr)
                         ROC_train.append([epoch,roc])
                         PR_train.append([epoch,pr])
+                        max_accuracy_train.append([epoch,max_accuracy])
+                        baseline_accuracy = model.baseline_model()
+                        baseline_accuracy_train.append([epoch,baseline_accuracy])
+
                 
                 # save bias/random-effect      
                 torch.save(model.gamma.detach().cpu(),results_path+"/nft_biases")
@@ -260,14 +314,33 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
                 # run predictions on multiple test batches to obtain error bars
                 ROC_final = []
                 PR_final = [] 
-                for i in range(n_test_batches):
-                    roc,pr=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr
+                max_accuracy_final = []
+                baseline_accuracy_final = [] 
+                
+                for _ in range(n_test_batches):
+                    roc,pr,max_accuracy=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr
                     ROC_final.append(roc)
                     PR_final.append(pr)
+                    max_accuracy_final.append(max_accuracy)
+                    baseline_accuracy = model.baseline_model()
+                    baseline_accuracy_final.append(baseline_accuracy)
                 ROC_avg = np.mean(ROC_final)
                 ROC_std = np.std(ROC_final)
                 PR_avg = np.mean(PR_final)
                 PR_std = np.std(PR_final)
+                max_accuracy_avg = np.mean(max_accuracy_final)
+                max_accuracy_std = np.std(max_accuracy_final)
+                baseline_accuracy_avg = np.mean(baseline_accuracy_final)
+                baseline_accuracy_std = np.std(baseline_accuracy_final)
+                with open(results_path + "/ROC-PR-MA-BA.txt", "w") as f:
+                    f.write("ROC average: " + str(ROC_avg) + "\n")
+                    f.write("ROC std: " + str(ROC_std) + "\n")
+                    f.write("PR average: " + str(PR_avg) + "\n")
+                    f.write("PR std: " + str(PR_std) + "\n")
+                    f.write("Max accuracy average: " + str(max_accuracy_avg) + "\n")
+                    f.write("Max accuracy std: " + str(max_accuracy_std) + "\n")
+                    f.write("Baseline accuracy average: " + str(baseline_accuracy_avg) + "\n")
+                    f.write("Baseline accuracy std: " + str(baseline_accuracy_std))
                 #roc, pr = 0,0
                 #print('dim',latent_dim)
                 #print('Epoch: ',epoch)
@@ -275,20 +348,22 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
                 #print('PR:',pr)
                 ROC_train.append([total_epochs,roc])
                 PR_train.append([total_epochs,pr])
+                max_accuracy_train.append([total_epochs,max_accuracy])
+                baseline_accuracy_train.append([total_epochs,baseline_accuracy])
                 #print(ROC)
                 #print(PR)
                 filename_roc_train=results_path+"/roc_train.txt"
                 filename_pr_train=results_path+"/pr_train.txt"
+                filename_max_accuracy_train=results_path+"/max_accuracy_train.txt"
+                filename_ba_train=results_path+"/baseline_accuracy_train.txt"
                     
                 # save performance statistics
                 np.savetxt(filename_roc_train,(ROC_train),delimiter=' ')
                 np.savetxt(filename_pr_train,(PR_train),delimiter=' ')
+                np.savetxt(filename_max_accuracy_train,(max_accuracy_train),delimiter=' ')
+                np.savetxt(filename_ba_train,(baseline_accuracy_train),delimiter=' ')
 
-                with open(results_path + "/ROC-PR.txt", "w") as f:
-                    f.write("ROC average: " + str(ROC_avg) + "\n")
-                    f.write("ROC std: " + str(ROC_std) + "\n")
-                    f.write("PR average: " + str(PR_avg) + "\n")
-                    f.write("PR std: " + str(PR_std))
+                
 
 if __name__ == "__main__":
     run_ldm_bi()             

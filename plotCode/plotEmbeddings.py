@@ -22,8 +22,8 @@ class embedPlotterBi(embedPlotter):
         super().__init__(path)
 
     def load_embeddings(self):
-        self.z = torch.load(self.path + "/bi/results/nft_embeddings").detach().numpy()
-        self.q = torch.load(self.path + "/bi/results/trader_embeddings").detach().numpy()
+        self.z = torch.load(self.path + "/bi/results/D2/nft_embeddings").detach().numpy()
+        self.q = torch.load(self.path + "/bi/results/D2/trader_embeddings").detach().numpy()
     
     def scatter(self):
         plt.scatter(*zip(*self.z[:,:2]),s=0.1,label="NFTs")
@@ -33,7 +33,7 @@ class embedPlotterBi(embedPlotter):
         plt.show()
 
     def categoryPlot(self):
-        categories = np.loadtxt(path + "/bi/train/sparse_c.txt",dtype='str')
+        categories = np.loadtxt(path + "/bi/sparse_c.txt",dtype='str')
         for category, color in colors.items():
             plt.scatter(*zip(*self.z[categories==category][:,:2]),s=0.1,c=color,label=category)
         plt.legend(markerscale=15)
@@ -45,9 +45,9 @@ class embedPlotterTri(embedPlotter):
         super().__init__(path)
 
     def load_embeddings(self):
-        self.l = torch.load(self.path + "/tri/results/nft_embeddings").detach().numpy()
-        self.r = torch.load(self.path + "/tri/results/seller_embeddings").detach().numpy()
-        self.u = torch.load(self.path + "/tri/results/buyer_embeddings").detach().numpy()
+        self.l = torch.load(self.path + "/tri/results/D2/nft_embeddings").detach().numpy()
+        self.r = torch.load(self.path + "/tri/results/D2/seller_embeddings").detach().numpy()
+        self.u = torch.load(self.path + "/tri/results/D2/buyer_embeddings").detach().numpy()
     
     def scatter(self):
         plt.scatter(*zip(*self.l[:,:2]),s=0.1,label="NFTs")
@@ -58,7 +58,7 @@ class embedPlotterTri(embedPlotter):
         plt.show()
     
     def categoryPlot(self):
-        categories = np.loadtxt(path + "/tri/train/sparse_c.txt",dtype='str')
+        categories = np.loadtxt(path + "/tri/sparse_c.txt",dtype='str')
         for category, color in colors.items():
             plt.scatter(*zip(*self.l[categories==category][:,:2]),s=0.1,c=color,label=category)
         plt.legend(markerscale=15)
@@ -74,9 +74,9 @@ epb.scatter()
 epb.categoryPlot()
 
 # embed plot structure tri
-ept = embedPlotterTri(path)
-ept.scatter()
-ept.categoryPlot()
+#ept = embedPlotterTri(path)
+#ept.scatter()
+#ept.categoryPlot()
 
 
 

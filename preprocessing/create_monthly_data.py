@@ -108,7 +108,11 @@ def create_sparse_data_bi(df,end,path):
     
     # for getting categories
     df_cat = df_train.groupby(["Unique_id_collection","Category"]).size().reset_index()
-    df_cat["Category"].to_csv(path + '/tri/sparse_c.txt',header=None,index=None)
+    df_cat["Category"].to_csv(path + '/bi/sparse_c.txt',header=None,index=None)
+
+    # for getting categories
+    df_cat = df_train.groupby(["Unique_id_collection","Category"]).size().reset_index()
+    df_cat["Category"].to_csv(path + '/bi/sparse_c.txt',header=None,index=None)
 
     # rename count column
     df_train.columns = ["Unique_id_collection","Trader_address","Category","Count"]
@@ -117,6 +121,15 @@ def create_sparse_data_bi(df,end,path):
     # save files
     save_sparse_data_bi(df_train,path+"/bi/train")
     save_sparse_data_bi(df_test,path+"/bi/test")
+
+    # for getting counts of sales in each category for each trader
+    trader_counts = df_train.groupby(["Trader_address","Category"]).size().reset_index()
+    
+    trader_counts.columns = ['Trader_address','Category','Count']
+  
+    trader_matrix = pd.DataFrame(pd.pivot_table(trader_counts,'Count', columns = "Category", index = "Trader_address", aggfunc = np.sum, fill_value = 0).to_records()).iloc[:,1:]
+    
+    trader_matrix.to_csv(path + '/bi/train/tradercategories.csv',index=None)
     
 def save_sparse_data_tri(df,path):
     store_path = path
@@ -187,12 +200,11 @@ def create_sparse_data_tri(df,end,path):
     df_test.columns = ["Unique_id_collection","Seller_address","Buyer_address","Category","Count"]
 
 
-    #maybe move the df_cat to the outer directory!!!!!
+    # maybe move the df_cat to the outer directory!!!!!
     save_sparse_data_tri(df_train,path+"/tri/train")
     save_sparse_data_tri(df_test,path+"/tri/test")
 
-
-     # for getting counts of sales in each category for each seller and buyer
+    # for getting counts of sales in each category for each seller and buyer
     seller_counts = df_train.groupby(["Seller_address","Category"]).size().reset_index()
     buyer_counts = df_train.groupby(["Buyer_address","Category"]).size().reset_index()
 
@@ -202,8 +214,8 @@ def create_sparse_data_tri(df,end,path):
     seller_matrix = pd.DataFrame(pd.pivot_table(seller_counts,'Count', columns = "Category", index = "Seller_address", aggfunc = np.sum, fill_value = 0).to_records()).iloc[:,1:]
     buyer_matrix  = pd.DataFrame(pd.pivot_table(buyer_counts,'Count', columns = "Category", index = "Buyer_address", aggfunc = np.sum, fill_value = 0).to_records()).iloc[:,1:]
     
-    seller_matrix.to_csv(path + '/tri/sellercategories.csv',index=None)
-    buyer_matrix.to_csv(path + '/tri/buyercategories.csv',index=None) 
+    seller_matrix.to_csv(path + '/tri/train/sellercategories.csv',index=None)
+    buyer_matrix.to_csv(path + '/tri/train/buyercategories.csv',index=None) 
    
 
 def save_data(df,end,path):

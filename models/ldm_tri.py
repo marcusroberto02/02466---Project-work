@@ -34,7 +34,7 @@ else:
     
 # i corresponds to NFT's
 # j corresponds to traders
-def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batches = 5,lrs=[0.001],total_runs = 1):
+def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batches = 5,lrs=[0.001],total_runs = 1,device=torch.device("cpu")):
     class LDM_TRI(nn.Module):
         def __init__(self,sparse_i,sparse_j,sparse_k,sparse_w,sparse_c,nft_size,seller_size,buyer_size,latent_dim,nft_sample_size,seller_matrix,buyer_matrix,test_batch_size=1000,sparse_i_test=None,sparse_j_test=None,sparse_k_test=None,sparse_w_test=None):
             super(LDM_TRI, self).__init__()
@@ -57,7 +57,7 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
             # categories 
             self.sparse_c = sparse_c
 
-            # matricies that stores the seller/buyer distribution across categories
+            # matrices that stores the seller/buyer distribution across categories
             self.seller_matrix = seller_matrix
             self.buyer_matrix = buyer_matrix
             
@@ -205,9 +205,12 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                 self.rates = torch.cat((rates_neg,rates_pos))
                 self.target=torch.cat((torch.zeros(self.test_batch_size),torch.ones(self.test_batch_size)))
                 precision, tpr, thresholds = metrics.precision_recall_curve(self.target.cpu().data.numpy(), self.rates.cpu().data.numpy())
-                
 
-            return metrics.roc_auc_score(self.target.cpu().data.numpy(),self.rates.cpu().data.numpy()),metrics.auc(tpr,precision)
+                predictions = [self.rates.cpu().data.numpy() > t for t in thresholds]
+
+                max_accuracy = max([metrics.accuracy_score(self.target.cpu().data.numpy(),p) for p in predictions])
+                
+            return metrics.roc_auc_score(self.target.cpu().data.numpy(),self.rates.cpu().data.numpy()),metrics.auc(tpr,precision),max_accuracy
         
         def baseline_model(self):
             test_i_pos,test_j_pos,test_k_pos,test_i_neg,test_j_neg,test_k_neg = self.create_test_batch()
@@ -310,8 +313,8 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                 sparse_c = np.loadtxt(dataset + "/tri/sparse_c.txt",dtype='str')
 
                 # seller buyer category matrices
-                seller_matrix = pd.read_csv(dataset+"/tri/sellercategories.csv")
-                buyer_matrix = pd.read_csv(dataset+"/tri/buyercategories.csv")
+                seller_matrix = pd.read_csv(dataset+"/tri/train/sellercategories.csv")
+                buyer_matrix = pd.read_csv(dataset+"/tri/train/buyercategories.csv")
 
                 # initialize model
                 model = LDM_TRI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_k=sparse_k,sparse_w=sparse_w,sparse_c=sparse_c,
@@ -328,9 +331,9 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                 losses=[]
                 ROC_train=[]
                 PR_train=[]
-                baseline_model_accuracy=[]
+                max_accuracy_train=[]
+                baseline_accuracy_train=[]
                 # model.scaling=1
-        
         
                 for epoch in range(total_epochs):
                     
@@ -344,15 +347,17 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                     if epoch%100==0:
                         # AUC-ROC and PR-AUC
                         # Receiver operating characteristic-area under curve   AND precision recal-area under curve
-                        roc,pr=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr
+                        # and max accuracy for the best threshold
+                        roc,pr,max_accuracy=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr, max accuracy
                         #roc, pr = 0,0
                         #print('Epoch: ',epoch)
                         #print('ROC:',roc)
                         #print('PR:',pr)
-                        accuracy = model.baseline_model()
-                        baseline_model_accuracy.append(accuracy)
                         ROC_train.append([epoch,roc])
                         PR_train.append([epoch,pr])
+                        max_accuracy_train.append([epoch,max_accuracy])
+                        baseline_accuracy = model.baseline_model()
+                        baseline_accuracy_train.append([epoch,baseline_accuracy])
 
                 # save bias terms
                 torch.save(model.rho.detach().cpu(),results_path + "/nft_biases")
@@ -366,15 +371,34 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
 
                 # run predictions on multiple test batches to obtain error bars
                 ROC_final = []
-                PR_final = [] 
+                PR_final = []
+                max_accuracy_final = [] 
+                baseline_accuracy_final = [] 
                 for i in range(n_test_batches):
-                    roc,pr=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr
+                    roc,pr,max_accuracy=model.link_prediction() #perfom link prediction and return auc-roc, auc-pr and max accuracy
                     ROC_final.append(roc)
                     PR_final.append(pr)
+                    max_accuracy_final.append(max_accuracy)
+                    baseline_accuracy = model.baseline_model()
+                    baseline_accuracy_final.append(baseline_accuracy)
                 ROC_avg = np.mean(ROC_final)
                 ROC_std = np.std(ROC_final)
                 PR_avg = np.mean(PR_final)
                 PR_std = np.std(PR_final)
+                max_accuracy_avg = np.mean(max_accuracy_final)
+                max_accuracy_std = np.std(max_accuracy_final)
+                baseline_accuracy_avg = np.mean(baseline_accuracy_final)
+                baseline_accuracy_std = np.std(baseline_accuracy_final)
+
+                with open(results_path + "/ROC-PR-MA-BA.txt", "w") as f:
+                    f.write("ROC average: " + str(ROC_avg) + "\n")
+                    f.write("ROC std: " + str(ROC_std) + "\n")
+                    f.write("PR average: " + str(PR_avg) + "\n")
+                    f.write("PR std: " + str(PR_std) + "\n")
+                    f.write("Max accuracy average: " + str(max_accuracy_avg) + "\n")
+                    f.write("Max accuracy std: " + str(max_accuracy_std) + "\n")
+                    f.write("Baseline accuracy average: " + str(baseline_accuracy_avg) + "\n")
+                    f.write("Baseline accuracy std: " + str(baseline_accuracy_std))
 
                 #roc,pr = 0,0
                 #print('dim',latent_dim)
@@ -383,21 +407,21 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                 #print('PR:',pr)
                 ROC_train.append([total_epochs,roc])
                 PR_train.append([total_epochs,pr])
+                max_accuracy_train.append([total_epochs,max_accuracy])
+                baseline_accuracy_train.append([total_epochs,baseline_accuracy])
                 #print(ROC)
                 #print(PR)
-                filename_roc=results_path+"/roc_train.txt"
-                filename_pr=results_path+"/pr_train.txt"
-                filename_ba=results_path+"/baseline_accuracy.txt"
+                filename_roc_train=results_path+"/roc_train.txt"
+                filename_pr_train=results_path+"/pr_train.txt"
+                filename_max_accuracy_train=results_path+"/max_accuracy_train.txt"
+                filename_ba=results_path+"/baseline_accuracy_train.txt"
                 # save performance statistics
-                np.savetxt(filename_roc,(ROC_train),delimiter=' ')
-                np.savetxt(filename_pr,(PR_train),delimiter=' ')
-                np.savetxt(filename_ba,(baseline_model_accuracy),delimiter=' ')
+                np.savetxt(filename_roc_train,(ROC_train),delimiter=' ')
+                np.savetxt(filename_pr_train,(PR_train),delimiter=' ')
+                np.savetxt(filename_max_accuracy_train,(max_accuracy_train),delimiter=' ')
+                np.savetxt(filename_ba,(baseline_accuracy_train),delimiter=' ')
 
-                with open(results_path + "/ROC-PR.txt", "w") as f:
-                    f.write("ROC average: " + str(ROC_avg) + "\n")
-                    f.write("ROC std: " + str(ROC_std) + "\n")
-                    f.write("PR average: " + str(PR_avg) + "\n")
-                    f.write("PR std: " + str(PR_std))
+                
 
 if __name__ == "__main__":
     run_ldm_tri()         

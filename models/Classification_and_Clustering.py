@@ -12,10 +12,9 @@ import plotly.graph_objs as go
 from plotly import tools
 from plotly.subplots import make_subplots
 import plotly.offline as py
-from imblearn.over_sampling import RandomOverSampler
 
 #nft_embeddings_path = "C:/Users/khelp/OneDrive/Desktop/4. semester/Fagprojekt/02466---Project-work/data/bi/nft_embeddings"
-path = "./data/ETH/2020-10"
+path = "./data/ETH/2020-10/bi"
 
 
 #################################################################
@@ -26,13 +25,11 @@ Node classification
 #################################################################
 
 #load nft embeddings as array in X and categories in y
-X = torch.load(path + "/bi/results/D2/nft_embeddings").detach().numpy()
-y = np.loadtxt(path + "/bi/train/sparse_c.txt",dtype="str").reshape(-1,1)
-oversample = RandomOverSampler(sampling_strategy="not majority")
-#X,y = oversample.fit_resample(X,y)
+X = torch.load(path + "/results/D2/nft_embeddings").detach().numpy()
+y = np.loadtxt(path + "/sparse_c.txt",dtype="str").reshape(-1,1)
 
 # split data into train and test
-X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.25, stratify=y,random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.2, stratify=y,random_state=42)
 
 # print distribution of plots
 print([sum(y_test == c) / len(y_test) for c in np.unique(y_test)])
@@ -73,16 +70,23 @@ plt.title("KNN performance on the bipartite model")
 plt.show()
 
 #Metrics
-#print('Number of miss-classifications for KNN:\n\t {0} out of {1}'.format(np.sum(knn.predict(X_test)!=y_test), len(y_test)))
-#print('Accuracy for KNN:\n\t {0}'.format(knn.score(X_test, y_test)))
-#print('Confusion matrix for KNN:\n\t {0}'.format(confusion_matrix(y_test, knn.predict(X_test))))
+optimal_n = np.argmax(knn_scores) + 1
+knn = KNeighborsClassifier(n_neighbors=optimal_n)
+knn.fit(X_train, y_train)
+print('Number of miss-classifications for KNN:\n\t {0} out of {1}'.format(np.sum(knn.predict(X_test)!=y_test), len(y_test)))
+print('Accuracy for KNN:\n\t {0}'.format(knn.score(X_test, y_test)))
+print('Confusion matrix for KNN:\n\t {0}'.format(confusion_matrix(y_test, knn.predict(X_test))))
 #print('ROC AUC for KNN:\n\t {0}'.format(roc_auc_score(y_test, knn.predict(X_test))))
 #print('Precision for KNN:\n\t {0}'.format(precision_score(y_test, knn.predict(X_test))))
 #print('Recall for KNN:\n\t {0}'.format(recall_score(y_test, knn.predict(X_test))))
 
 
+# baseline model 
+majority_class = np.argmax([sum(y_train==c) for c in np.unique(list(y_train))])
+y_pred = [majority_class] * len(y_test)
 
-
+accuracy = np.sum(y_pred == y_test) / len(y_test)
+print("Majority class voting accuracy:",accuracy)
 #################################################################
 '''
 Clustering

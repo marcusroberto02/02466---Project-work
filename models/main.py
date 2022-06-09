@@ -49,7 +49,7 @@ lrs=[0.1]
 total_runs=1
 
 
-run_ldm_bi(dataset, latent_dims,total_epochs,n_test_batches,lrs,total_runs)
-run_ldm_tri(dataset, latent_dims,total_epochs,n_test_batches,lrs,total_runs)
+run_ldm_bi(dataset,latent_dims,total_epochs,n_test_batches,lrs,total_runs,device)
+run_ldm_tri(dataset,latent_dims,total_epochs,n_test_batches,lrs,total_runs,device)
 
  

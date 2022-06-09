@@ -2,7 +2,9 @@ import matplotlib.pyplot as plt
 import torch
 import numpy as np
 import pandas as pd
-path = "./data/ETH/2020-10"
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+path = "../data/ETH/2020-10"
 
 specific = "/tri/results/D2"
 
@@ -99,3 +101,54 @@ clb = l[bought_items[collector]]
 #plt.legend(loc="lower left", markerscale=15)
 #plt.title("True classification - Tripartite model")
 #plt.show()
+
+
+# Seller buyer plots
+# embeddings loaded as l = nft, r = sellers, u = buyers
+# Scatter plots of the embeddings
+plt.scatter(r.T[0], r.T[1], s=2, color = 'purple', label="Sellers")
+plt.scatter(u.T[0], u.T[1], s=2, color = 'orange', label="Buyers")
+plt.legend(loc="lower left")
+plt.title("Seller embeddings")
+plt.show()
+
+
+def plot_clusters(data):
+    kmeans_kwargs = {
+        "init" :"random",
+        "n_init":10,
+        "max_iter":100,
+        "random_state":33
+    }
+
+    kmeans = KMeans(n_clusters=5, **kmeans_kwargs)
+    kmeans.fit(data)
+
+    labels = kmeans.fit_predict(data)
+    u_labels = np.unique(labels)
+
+    labelled_sellers = np.c_[data,labels]
+
+    for j in u_labels:
+        clust = [i for i in labelled_sellers if i[2]==j]
+        plt.scatter(np.transpose(clust)[0], np.transpose(clust)[1], s = 5,label = j)
+    plt.legend()
+    plt.show()
+'''
+    silhouette_coefficients = []
+
+    for k in range (2,11):
+        kmeans = KMeans(n_clusters=k, **kmeans_kwargs)
+        kmeans.fit(data)
+        score = silhouette_score(u, kmeans.labels_)
+        silhouette_coefficients.append(score)
+
+        plt.style.use("fivethirtyeight")
+        plt.plot(list(range(2, 11)), silhouette_coefficients)
+        plt.xticks(range(2, 11))
+        plt.xlabel("Number of Clusters")
+        plt.ylabel("Silhouette Coefficient")
+        plt.show()
+'''
+plot_clusters(u)
+plot_clusters(r)

@@ -20,7 +20,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 
-from torch_sparse import spspmm
+#from torch_sparse import spspmm
 
 CUDA = torch.cuda.is_available()
 
@@ -172,6 +172,11 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
             test_j_neg = torch.randint(0,self.seller_size,size=(self.test_batch_size,))
             test_k_neg = torch.randint(0,self.buyer_size,size=(self.test_batch_size,))
             
+            # print number of positive class equal to negative class
+            print(len(torch.eq(test_i_pos,test_i_neg).masked_select(torch.eq(test_i_pos,test_i_neg)==True)))
+            print(len(torch.eq(test_j_pos,test_j_neg).masked_select(torch.eq(test_j_pos,test_j_neg)==True)))
+            print(len(torch.eq(test_k_pos,test_k_neg).masked_select(torch.eq(test_k_pos,test_k_neg)==True)))
+
             return test_i_pos, test_j_pos, test_k_pos, test_i_neg, test_j_neg, test_k_neg
 
 

@@ -14,11 +14,11 @@ def main():
     dataset_name = "data_ETH.csv"
     
     # define start and end
-    start = datetime.datetime(2020, 10, 1)
+    start = datetime.datetime(2020, 1, 1)
     end = start + relativedelta(months =+ 1)
 
     # mark last month for storing data
-    last_month = datetime.datetime(2020, 11, 1)
+    last_month = datetime.datetime(2021, 1, 1)
     
     while start < last_month:
         dataset = pd.DataFrame()
@@ -76,8 +76,9 @@ def save_sparse_data_bi(df,path):
     df["Count"].to_csv(store_path + '/sparse_w.txt',header=None,index=None)
 
     with open(store_path + "/info.txt", "w") as f:
-        f.write("Number of unique traders: " + str(len(set(df["Trader_address"]))) + "\n")
         f.write("Number of unique NFTs: " + str(len(set(df["Unique_id_collection"]))) + "\n")
+        f.write("Number of unique traders: " + str(len(set(df["Trader_address"]))) + "\n")
+        f.write("Number of unique trades: " + str(len(df["Unique_id_collection"])) + "\n")
         f.write("Number of unique categories: " + str(len(set(df["Category"]))))
 
 def create_sparse_data_bi(df,end,path):
@@ -140,9 +141,10 @@ def save_sparse_data_tri(df,path):
     df["Count"].to_csv(store_path + '/sparse_w.txt',header=None,index=None)
     #write to a text file
     with open(store_path + "/info.txt", "w") as f:
+        f.write("Number of unique NFTs: " + str(len(set(df["Unique_id_collection"]))) + "\n")
         f.write("Number of unique sellers: " + str(len(set(df["Seller_address"]))) + "\n")
         f.write("Number of unique buyers: " + str(len(set(df["Buyer_address"]))) + "\n")
-        f.write("Number of unique NFTs: " + str(len(set(df["Unique_id_collection"]))) + "\n")
+        f.write("Number of unique trades: " + str(len(df["Buyer_address"])) + "\n")
         f.write("Number of unique categories: " + str(len(set(df["Category"]))))
 
 def create_sparse_data_tri(df,end,path):

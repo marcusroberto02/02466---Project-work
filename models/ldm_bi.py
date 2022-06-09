@@ -12,7 +12,7 @@ import pandas as pd
 import os
 from sklearn.metrics import accuracy_score
 
-from torch_sparse import spspmm
+#from torch_sparse import spspmm
 
 CUDA = torch.cuda.is_available()
 
@@ -132,6 +132,10 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
             # negative class
             test_i_neg = torch.randint(0,self.nft_size,size=(self.test_batch_size,))
             test_j_neg = torch.randint(0,self.trader_size,size=(self.test_batch_size,))
+
+            # print number of positive class equal to negative class
+            print(len(torch.eq(test_i_pos,test_i_neg).masked_select(torch.eq(test_i_pos,test_i_neg)==True)))
+            print(len(torch.eq(test_j_pos,test_j_neg).masked_select(torch.eq(test_j_pos,test_j_neg)==True)))
             
             return test_i_pos, test_j_pos, test_i_neg, test_j_neg
 

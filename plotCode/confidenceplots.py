@@ -26,11 +26,11 @@ for d in dimensions:
 plt.errorbar(dimensions,ROC_scores,ROC_errorbars,capsize=10)
 plt.xlabel("Embedding dimensions")
 plt.ylabel("ROC score")
-plt.title("ROC score plot with error bars - Tripartite model")
+plt.title("ROC score plot with error bars - Bipartite model")
 plt.show()
 
 plt.errorbar(dimensions,PR_scores,PR_errorbars,capsize=10)
 plt.xlabel("Embedding dimensions")
 plt.ylabel("PR score")
-plt.title("PR score plot with error bars - Tripartite model")
+plt.title("PR score plot with error bars - Bipartite model")
 plt.show()

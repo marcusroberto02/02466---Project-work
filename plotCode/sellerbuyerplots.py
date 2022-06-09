@@ -78,8 +78,8 @@ for collector in collectors:
 
 # plot seller and buyer location for specific collector
 collector = collectors[0]
-plt.scatter(r[collector,0],r[collector,1],s=50,color="yellow",label="seller")
-plt.scatter(u[collector,0],u[collector,1],s=50,color="black",label="buyer")
+#plt.scatter(r[collector,0],r[collector,1],s=50,color="yellow",label="seller")
+#plt.scatter(u[collector,0],u[collector,1],s=50,color="black",label="buyer")
 
 # categories
 categories = np.loadtxt(path + "/tri/train/sparse_c.txt",dtype="str")
@@ -96,6 +96,6 @@ clb = l[bought_items[collector]]
 #plt.scatter(*zip(*cls[:,:2]),s=10,c="blue",marker="P",label="Sold items")
 #plt.scatter(*zip(*clb[:,:2]),s=10,c="red",marker="*",label="Bought items")
 
-plt.legend(loc="lower left", markerscale=15)
-plt.title("True classification - Tripartite model")
-plt.show()
+#plt.legend(loc="lower left", markerscale=15)
+#plt.title("True classification - Tripartite model")
+#plt.show()

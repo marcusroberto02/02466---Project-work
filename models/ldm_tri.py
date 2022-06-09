@@ -215,7 +215,7 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
             test_c_pos = [self.sparse_c[nft] for nft in test_i_pos]
             test_c_neg = [self.sparse_c[nft] for nft in test_i_neg]
 
-            predictions = list()
+            predictions = []
             target = [1] * self.test_batch_size + [0] * self.test_batch_size
             for t in range(self.test_batch_size):
                 j,k,c = test_j_pos[t].item(),test_k_pos[t].item(),test_c_pos[t]
@@ -351,8 +351,8 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                         #print('PR:',pr)
                         accuracy = model.baseline_model()
                         baseline_model_accuracy.append(accuracy)
-                        ROC_train.append(roc)
-                        PR_train.append(pr)
+                        ROC_train.append([epoch,roc])
+                        PR_train.append([epoch,pr])
 
                 # save bias terms
                 torch.save(model.rho.detach().cpu(),results_path + "/nft_biases")
@@ -381,8 +381,8 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                 #print('Epoch: ',epoch)
                 #print('ROC:',roc)
                 #print('PR:',pr)
-                ROC_train.append(roc)
-                PR_train.append(pr)
+                ROC_train.append([total_epochs,roc])
+                PR_train.append([total_epochs,pr])
                 #print(ROC)
                 #print(PR)
                 filename_roc=results_path+"/roc_train.txt"

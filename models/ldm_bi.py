@@ -248,8 +248,8 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
                         #print('Epoch: ',epoch)
                         #print('ROC:',roc)
                         #print('PR:',pr)
-                        ROC_train.append(roc)
-                        PR_train.append(pr)
+                        ROC_train.append([epoch,roc])
+                        PR_train.append([epoch,pr])
                 
                 # save bias/random-effect      
                 torch.save(model.gamma.detach().cpu(),results_path+"/nft_biases")
@@ -273,8 +273,8 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
                 #print('Epoch: ',epoch)
                 #print('ROC:',roc)
                 #print('PR:',pr)
-                ROC_train.append(roc)
-                PR_train.append(pr)
+                ROC_train.append([total_epochs,roc])
+                PR_train.append([total_epochs,pr])
                 #print(ROC)
                 #print(PR)
                 filename_roc_train=results_path+"/roc_train.txt"

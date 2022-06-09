@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
-path = "../data/ETH/2020-10"
+path = "./data/ETH/2020-10"
 
 specific = "/tri/results/D2"
 
@@ -25,7 +25,7 @@ ax.spines['bottom'].set_position('zero')
 ax.spines['left'].set_position('zero')
 ax.spines['right'].set_color('none')
 plt.show()
-
+"""
 # define lower limit for vast inactivity for sellers 
 # (i.e. if the seller bias is below this threshold the seller is considered inactive)
 sl = -5
@@ -53,12 +53,12 @@ def discover_miners():
     # inactive sellers
     ins = set(list(np.where(seller_biases > sh)[0]))
     return list(acb & ins)
-
+"""
 # load embeddings
 l = torch.load(path + specific + "/nft_embeddings").detach().numpy()
 r = torch.load(path + specific + "/seller_embeddings").detach().numpy()
 u = torch.load(path + specific + "/buyer_embeddings").detach().numpy()
-
+"""
 # find collectors
 collectors = discover_collectors()
 
@@ -102,14 +102,25 @@ clb = l[bought_items[collector]]
 #plt.title("True classification - Tripartite model")
 #plt.show()
 
+"""
 
 # Seller buyer plots
 # embeddings loaded as l = nft, r = sellers, u = buyers
 # Scatter plots of the embeddings
-plt.scatter(r.T[0], r.T[1], s=2, color = 'purple', label="Sellers")
-plt.scatter(u.T[0], u.T[1], s=2, color = 'orange', label="Buyers")
-plt.legend(loc="lower left")
-plt.title("Seller embeddings")
+inactive_sellers = r[seller_biases <= np.percentile(seller_biases, 20)]
+active_sellers = r[seller_biases >= np.percentile(seller_biases, 80)]
+inactive_buyers = u[buyer_biases <= np.percentile(buyer_biases, 20)]
+active_buyers = u[buyer_biases >= np.percentile(buyer_biases, 80)]
+
+plt.scatter(inactive_sellers.T[0], inactive_sellers.T[1], s=2, c = 'red', marker='o', label="Inactive sellers")
+plt.scatter(active_sellers.T[0], active_sellers.T[1], s=2, color = 'green',marker='o', label="Active sellers")
+#plt.legend(loc="upper right")
+#plt.title("Seller embeddings")
+#plt.show()
+plt.scatter(inactive_buyers.T[0], inactive_buyers.T[1], s=2, c = 'orange', marker='*', label="Inactive buyers")
+plt.scatter(active_buyers.T[0], active_buyers.T[1], s=2, color = 'purple', marker='*', label="Active buyers")
+plt.legend(loc="upper right")
+plt.title("Seller and buyer embeddings")
 plt.show()
 
 
@@ -152,3 +163,24 @@ def plot_clusters(data):
 '''
 plot_clusters(u)
 plot_clusters(r)
+
+
+## Bias histograms 
+fig, axs = plt.subplots(2)
+axs[1].hist(seller_biases, bins = 100, density=False)
+axs[1].set_title('Seller Bias histogram')
+axs[1].xlabel('Seller Biases')
+axs[1].ylabel('Frequency')
+axs[1].grid(True)
+
+axs[2].hist(buyer_biases, bins = 100, density=False)
+axs[2].set_title('Buyer Bias histogram')
+axs[2].xlabel('Buyer Biases')
+axs[2].ylabel('Frequency')
+axs[2].grid(True)
+
+
+plt.tight_layout()
+
+
+plt.show()

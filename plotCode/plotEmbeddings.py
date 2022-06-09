@@ -74,9 +74,9 @@ epb.scatter()
 epb.categoryPlot()
 
 # embed plot structure tri
-#ept = embedPlotterTri(path)
-#ept.scatter()
-#ept.categoryPlot()
+ept = embedPlotterTri(path)
+ept.scatter()
+ept.categoryPlot()
 
 
 

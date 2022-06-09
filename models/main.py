@@ -19,7 +19,11 @@ from sklearn.neighbors import KNeighborsClassifier
 from ldm_bi import run_ldm_bi
 from ldm_tri import run_ldm_tri
 
-from torch_sparse import spspmm
+#from torch_sparse import spspmm
+
+import os
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
+
 
 CUDA = torch.cuda.is_available()
 

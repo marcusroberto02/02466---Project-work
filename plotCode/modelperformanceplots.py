@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 path = "./data/ETH/2020-10"
 
-specific = "/bi/results/D3"
+specific = "/tri/results/D3"
 
 link_prediction_acc = np.loadtxt(path + specific + "/max_accuracy_train.txt")
 baseline_acc = np.loadtxt(path + specific + "/baseline_accuracy_train.txt")

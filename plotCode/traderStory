@@ -1,0 +1,25 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
+
+path = "./data/ETH/2020-10"
+
+specific = "/tri/results/D2"
+
+
+df = pd.read_csv(path + "/tri/sellerbuyeridtable.csv")
+sellers = df["ei_seller"]
+buyers = df['ei_buyer']
+
+
+
+
+
+
+# load embeddings
+l = torch.load(path + specific + "/nft_embeddings").detach().numpy()
+r = torch.load(path + specific + "/seller_embeddings").detach().numpy()
+u = torch.load(path + specific + "/buyer_embeddings").detach().numpy()
+
+

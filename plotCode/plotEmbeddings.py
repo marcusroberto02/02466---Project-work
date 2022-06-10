@@ -22,8 +22,8 @@ class embedPlotterBi(embedPlotter):
         super().__init__(path)
 
     def load_embeddings(self):
-        self.z = torch.load(self.path + "/bi/D2/nft_embeddings").detach().numpy()
-        self.q = torch.load(self.path + "/bi/D2/trader_embeddings").detach().numpy()
+        self.z = torch.load(self.path + "/bi/results/D2/nft_embeddings").detach().numpy()
+        self.q = torch.load(self.path + "/bi/results/D2/trader_embeddings").detach().numpy()
     
     def scatter(self):
         plt.scatter(*zip(*self.z[:,:2]),s=0.1,label="NFTs")
@@ -45,9 +45,9 @@ class embedPlotterTri(embedPlotter):
         super().__init__(path)
 
     def load_embeddings(self):
-        self.l = torch.load(self.path + "/tri/D2/nft_embeddings").detach().numpy()
-        self.r = torch.load(self.path + "/tri/D2/seller_embeddings").detach().numpy()
-        self.u = torch.load(self.path + "/tri/D2/buyer_embeddings").detach().numpy()
+        self.l = torch.load(self.path + "/tri/results/D2/nft_embeddings").detach().numpy()
+        self.r = torch.load(self.path + "/tri/results/D2/seller_embeddings").detach().numpy()
+        self.u = torch.load(self.path + "/tri/results/D2/buyer_embeddings").detach().numpy()
     
     def scatter(self):
         plt.scatter(*zip(*self.l[:,:2]),s=0.1,label="NFTs")

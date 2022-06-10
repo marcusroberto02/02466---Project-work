@@ -25,6 +25,7 @@ ax.spines['bottom'].set_position('zero')
 ax.spines['left'].set_position('zero')
 ax.spines['right'].set_color('none')
 plt.show()
+
 """
 # define lower limit for vast inactivity for sellers 
 # (i.e. if the seller bias is below this threshold the seller is considered inactive)

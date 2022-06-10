@@ -1,0 +1,8 @@
+ROC average: 0.949713384
+ROC std: 0.006261437126774012
+PR average: 0.9546262643009245
+PR std: 0.00585915453424768
+Max accuracy average: 0.886447
+Max accuracy std: 0.009456595106062232
+Baseline accuracy average: 0.887584
+Baseline accuracy std: 0.009676618417608506

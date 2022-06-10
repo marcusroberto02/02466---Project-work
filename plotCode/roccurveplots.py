@@ -4,7 +4,7 @@ from sklearn import metrics
 
 
 def score_epoch(mtype, score_type):
-    f = np.loadtxt("./data/ETH/2020-10/" + mtype + "/results/D9/"+score_type + "_train.txt")
+    f = np.loadtxt("./results_final/ETH/2021-02/" + mtype + "/results/D2/"+score_type + "_train.txt")
 
     epochs,score = f[:,0],f[:,1]
     

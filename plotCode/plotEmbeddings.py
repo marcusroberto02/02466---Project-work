@@ -66,7 +66,7 @@ class embedPlotterTri(embedPlotter):
         plt.show()
 
         
-path = "./data/ETH/2020-10"
+path = "./results_final/ETH/2021-02"
 
 # embed plot structure bi
 epb = embedPlotterBi(path)

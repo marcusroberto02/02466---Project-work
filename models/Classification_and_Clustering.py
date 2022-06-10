@@ -12,7 +12,7 @@ import plotly.graph_objs as go
 from plotly import tools
 from plotly.subplots import make_subplots
 import plotly.offline as py
- from sklearn.metrics import plot_confusion_matrix
+from sklearn.metrics import plot_confusion_matrix
 
 #nft_embeddings_path = "C:/Users/khelp/OneDrive/Desktop/4. semester/Fagprojekt/02466---Project-work/data/bi/nft_embeddings"
 path = "./data/ETH/2020-10/bi"

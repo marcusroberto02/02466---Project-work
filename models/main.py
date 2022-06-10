@@ -1,4 +1,3 @@
-
 # Import all the packages
 from dataclasses import replace
 from enum import unique
@@ -20,9 +19,6 @@ from ldm_bi import run_ldm_bi
 from ldm_tri import run_ldm_tri
 
 #from torch_sparse import spspmm
-
-import os
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 
 CUDA = torch.cuda.is_available()
@@ -53,7 +49,7 @@ lrs=[0.1]
 total_runs=1
 
 
-#run_ldm_bi(dataset,latent_dims,total_epochs,n_test_batches,lrs,total_runs,device)
+run_ldm_bi(dataset,latent_dims,total_epochs,n_test_batches,lrs,total_runs,device)
 run_ldm_tri(dataset,latent_dims,total_epochs,n_test_batches,lrs,total_runs,device)
 
  

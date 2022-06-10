@@ -140,9 +140,9 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
             test_i_neg = torch.randint(0,self.nft_size,size=(self.test_batch_size,))
             test_j_neg = torch.randint(0,self.trader_size,size=(self.test_batch_size,))
             
-            while sum([self.is_pos_edge[(i,j)] for (i,j) in zip(test_i_neg,test_j_neg)])>0:
-                test_i_neg = torch.randint(0,self.nft_size,size=(self.test_batch_size,))
-                test_j_neg = torch.randint(0,self.trader_size,size=(self.test_batch_size,))
+            #while sum([self.is_pos_edge[(i,j)] for (i,j) in zip(test_i_neg,test_j_neg)])>0:
+            #    test_i_neg = torch.randint(0,self.nft_size,size=(self.test_batch_size,))
+            #    test_j_neg = torch.randint(0,self.trader_size,size=(self.test_batch_size,))
             
             return test_i_pos, test_j_pos, test_i_neg, test_j_neg
 

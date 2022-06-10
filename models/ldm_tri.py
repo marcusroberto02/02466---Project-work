@@ -348,7 +348,6 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                 for epoch in range(total_epochs):
                     
                     loss=-model.LSM_likelihood_bias(epoch=epoch)
-                    print("hey",epoch)
                     losses.append(loss.item())
                     
                     optimizer.zero_grad() # clear the gradients.   

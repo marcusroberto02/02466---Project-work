@@ -12,6 +12,7 @@ import plotly.graph_objs as go
 from plotly import tools
 from plotly.subplots import make_subplots
 import plotly.offline as py
+ from sklearn.metrics import plot_confusion_matrix
 
 #nft_embeddings_path = "C:/Users/khelp/OneDrive/Desktop/4. semester/Fagprojekt/02466---Project-work/data/bi/nft_embeddings"
 path = "./data/ETH/2020-10/bi"
@@ -53,6 +54,10 @@ print('Confusion matrix for Multinomial regression:\n\t {0}'.format(confusion_ma
 #print('Precision for Multinomial regression:\n\t {0}'.format(precision_score(y_test, logreg.predict(X_test))))
 #print('Recall for Multinomial regression:\n\t {0}'.format(recall_score(y_test, logreg.predict(X_test))))
 
+# plot confusion matrix Multinomial logistic regression
+plot_confusion_matrix(logreg, X_test, y_test)
+plt.show()
+
 
 #KNN
 neighbours = range(1,31)
@@ -79,6 +84,10 @@ print('Confusion matrix for KNN:\n\t {0}'.format(confusion_matrix(y_test, knn.pr
 #print('ROC AUC for KNN:\n\t {0}'.format(roc_auc_score(y_test, knn.predict(X_test))))
 #print('Precision for KNN:\n\t {0}'.format(precision_score(y_test, knn.predict(X_test))))
 #print('Recall for KNN:\n\t {0}'.format(recall_score(y_test, knn.predict(X_test))))
+
+# plot confusion matrix knn
+plot_confusion_matrix(knn, X_test, y_test)
+plt.show()
 
 
 # baseline model 

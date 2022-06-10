@@ -4,14 +4,14 @@ from sklearn import metrics
 
 
 def score_epoch(mtype, score_type):
+    f = np.loadtxt("./data/ETH/2020-10/" + mtype + "/results/D9/"+score_type + "_train.txt")
 
-    epochs = np.arange(0,301)*100
-    roc = np.loadtxt("./data/ETH/2020-10/" + mtype + "/results/D9/"+score_type + "_train.txt")
+    epochs,score = f[:,0],f[:,1]
     
     plt.title(score_type + " scores as a function of epochs - " + mtype + "partite model")
     plt.ylabel(score_type + " score at given epoch")
     plt.xlabel("Nr of epochs")
-    plt.plot(epochs, roc, '-k', markersize= 2)
+    plt.plot(epochs, score, '-k', markersize= 2)
     plt.show()
 
 score_epoch("Bi","ROC")

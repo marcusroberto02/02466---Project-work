@@ -14,11 +14,11 @@ def main():
     dataset_name = "data_ETH.csv"
     
     # define start and end
-    start = datetime.datetime(2020, 1, 1)
+    start = datetime.datetime(2020, 10, 1)
     end = start + relativedelta(months =+ 1)
 
     # mark last month for storing data
-    last_month = datetime.datetime(2021, 1, 1)
+    last_month = datetime.datetime(2021, 6, 1)
     
     while start < last_month:
         dataset = pd.DataFrame()

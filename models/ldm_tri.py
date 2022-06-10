@@ -19,6 +19,7 @@ from sklearn.metrics import confusion_matrix, roc_auc_score, precision_score, re
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
+from collections import defaultdict
 
 #from torch_sparse import spspmm
 
@@ -36,7 +37,7 @@ else:
 # j corresponds to traders
 def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batches = 5,lrs=[0.001],total_runs = 1,device=torch.device("cpu")):
     class LDM_TRI(nn.Module):
-        def __init__(self,sparse_i,sparse_j,sparse_k,sparse_w,sparse_c,nft_size,seller_size,buyer_size,latent_dim,nft_sample_size,seller_matrix,buyer_matrix,test_batch_size=1000,sparse_i_test=None,sparse_j_test=None,sparse_k_test=None,sparse_w_test=None):
+        def __init__(self,sparse_i,sparse_j,sparse_k,sparse_w,sparse_c,nft_size,seller_size,buyer_size,latent_dim,nft_sample_size,seller_matrix,buyer_matrix,test_batch_size=500,sparse_i_test=None,sparse_j_test=None,sparse_k_test=None,sparse_w_test=None):
             super(LDM_TRI, self).__init__()
             # input sizes
             self.nft_size = nft_size
@@ -67,6 +68,10 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
             self.sparse_k_test = sparse_k_test
             self.sparse_w_test = sparse_w_test
             
+            # create dictionary for positive edges
+            self.is_pos_edge = defaultdict(lambda: False)
+            for (i,j,k) in zip(self.sparse_i_test,self.sparse_j_test,self.sparse_k_test):
+                self.is_pos_edge[(i,j,k)] = True
 
             self.Softmax=nn.Softmax(1)
 
@@ -79,7 +84,7 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
             self.sampling_weights_test = torch.ones(self.test_size,device=device)
 
             # size of each test batch
-            self.test_batch_size = int(1/5 * len(self.sparse_i_test))
+            self.test_batch_size = test_batch_size
 
             # PARAMETERS
             # nft embeddings
@@ -171,11 +176,11 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
             test_i_neg = torch.randint(0,self.nft_size,size=(self.test_batch_size,))
             test_j_neg = torch.randint(0,self.seller_size,size=(self.test_batch_size,))
             test_k_neg = torch.randint(0,self.buyer_size,size=(self.test_batch_size,))
-            
-            # print number of positive class equal to negative class
-            print(len(torch.eq(test_i_pos,test_i_neg).masked_select(torch.eq(test_i_pos,test_i_neg)==True)))
-            print(len(torch.eq(test_j_pos,test_j_neg).masked_select(torch.eq(test_j_pos,test_j_neg)==True)))
-            print(len(torch.eq(test_k_pos,test_k_neg).masked_select(torch.eq(test_k_pos,test_k_neg)==True)))
+
+            while sum([self.is_pos_edge[(i,j,k)] for (i,j,k) in zip(test_i_neg,test_j_neg,test_k_neg)])>0:
+                test_i_neg = torch.randint(0,self.nft_size,size=(self.test_batch_size,))
+                test_j_neg = torch.randint(0,self.seller_size,size=(self.test_batch_size,))
+                test_k_neg = torch.randint(0,self.buyer_size,size=(self.test_batch_size,))
 
             return test_i_pos, test_j_pos, test_k_pos, test_i_neg, test_j_neg, test_k_neg
 
@@ -323,7 +328,7 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
 
                 # initialize model
                 model = LDM_TRI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_k=sparse_k,sparse_w=sparse_w,sparse_c=sparse_c,
-                                nft_size=N,seller_size=S,buyer_size=B,latent_dim=latent_dim,nft_sample_size=1000,
+                                nft_size=N,seller_size=S,buyer_size=B,latent_dim=latent_dim,nft_sample_size=1000,test_batch_size=500,
                                 sparse_i_test=sparse_i_test,sparse_j_test=sparse_j_test,
                                 sparse_k_test=sparse_k_test,sparse_w_test=sparse_w_test,
                                 seller_matrix = seller_matrix, buyer_matrix = buyer_matrix).to(device)         
@@ -343,6 +348,7 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
                 for epoch in range(total_epochs):
                     
                     loss=-model.LSM_likelihood_bias(epoch=epoch)
+                    print("hey",epoch)
                     losses.append(loss.item())
                     
                     optimizer.zero_grad() # clear the gradients.   

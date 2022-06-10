@@ -4,9 +4,8 @@ import pandas as pd
 import numpy as np
 from collections import defaultdict,deque
 
-from sympy import true
 #print(test)
-path = 'C:/Users/khelp/OneDrive/Desktop/4. semester/Fagprojekt/02466---Project-work/data/'
+path = './data/'
 dataset = "Data_API.csv"
 df = pd.read_csv(path + dataset)
 
@@ -73,6 +72,15 @@ for buyer in buyers:
 
 print("Buyer edges done!")
 
+# check if a person has sold using one cryptocurrency and sold using another
+for seller in sellers:
+    for crypto1 in seller_dict[seller]:
+        for crypto2 in buyer_dict[seller]:
+            if crypto1 != crypto2:
+                crypto_dict[crypto1].add(crypto2)
+
+print("Seller to buyer edges done!")
+
 cryptos = np.unique(df["Crypto"])
 visited = defaultdict(lambda:False) 
 cluster = defaultdict(lambda:-1)
@@ -108,8 +116,9 @@ for crypto in df["Crypto"]:
 
 for c in range(cnum):
     print(clusters[c], cluster_count[c], len(clusters[c]))
-    for crypto in clusters[c]:
-        print(crypto + ": " + str(crypto_count[crypto]))
+    for crypto, count in reversed(sorted(crypto_count.items(),key=lambda x: x[1])):
+        if crypto in clusters[c]:
+            print(crypto + ": " + str(count))
     
 
 

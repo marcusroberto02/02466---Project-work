@@ -42,18 +42,18 @@ else:
 #dataset = path + blockchain + date
 
 # for testing on local pc
-dataset = "./data/ETH/2020-10"
+dataset = "./data/ETH/2021-02"
 
 # model parameters
 latent_dims = [2]
-total_epochs= 1
+total_epochs= 10
 n_test_batches = 5
 lrs=[0.1]
 # Total independent runs of the model
 total_runs=1
 
 
-run_ldm_bi(dataset,latent_dims,total_epochs,n_test_batches,lrs,total_runs,device)
+#run_ldm_bi(dataset,latent_dims,total_epochs,n_test_batches,lrs,total_runs,device)
 run_ldm_tri(dataset,latent_dims,total_epochs,n_test_batches,lrs,total_runs,device)
 
  

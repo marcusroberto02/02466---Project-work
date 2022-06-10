@@ -1,6 +1,7 @@
 # HUSK CREDITS!!!
 
 # Import all the packages
+from email.policy import default
 import pandas
 import torch
 import torch.nn as nn
@@ -11,6 +12,7 @@ from sklearn import metrics
 import pandas as pd
 import os
 from sklearn.metrics import accuracy_score
+from collections import defaultdict
 
 #from torch_sparse import spspmm
 
@@ -28,7 +30,7 @@ else:
 # j corresponds to traders
 def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batches = 5,lrs=[0.001],total_runs = 1,device=torch.device("cpu")):
     class LDM_BI(nn.Module):
-        def __init__(self,sparse_i,sparse_j,sparse_w,sparse_c,nft_size,trader_size,latent_dim,nft_sample_size,trader_matrix,test_batch_size=1000,sparse_i_test=None,sparse_j_test=None,sparse_w_test=None):
+        def __init__(self,sparse_i,sparse_j,sparse_w,sparse_c,nft_size,trader_size,latent_dim,nft_sample_size,trader_matrix,test_batch_size=500,sparse_i_test=None,sparse_j_test=None,sparse_w_test=None):
             super(LDM_BI, self).__init__()
             # input sizes
             self.nft_size = nft_size
@@ -57,6 +59,11 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
             self.sparse_j_test = sparse_j_test
             self.sparse_w_test = sparse_w_test
 
+            # create dictionary for positive edges
+            self.is_pos_edge = defaultdict(lambda: False)
+            for (i,j) in zip(self.sparse_i_test,self.sparse_j_test):
+                self.is_pos_edge[(i,j)] = True
+
             # used for sampling
             self.sampling_weights_nfts = torch.ones(self.nft_size,device = device)
             self.sampling_weights_traders=torch.ones(self.trader_size,device = device)
@@ -67,7 +74,7 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
             self.sampling_weights_test = torch.ones(self.test_size,device=device)
 
             # size of each test batch
-            self.test_batch_size = int(1/5 * len(self.sparse_j_test))
+            self.test_batch_size = test_batch_size
 
             # PARAMETERS
             # nft embeddings
@@ -132,10 +139,10 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
             # negative class
             test_i_neg = torch.randint(0,self.nft_size,size=(self.test_batch_size,))
             test_j_neg = torch.randint(0,self.trader_size,size=(self.test_batch_size,))
-
-            # print number of positive class equal to negative class
-            print(len(torch.eq(test_i_pos,test_i_neg).masked_select(torch.eq(test_i_pos,test_i_neg)==True)))
-            print(len(torch.eq(test_j_pos,test_j_neg).masked_select(torch.eq(test_j_pos,test_j_neg)==True)))
+            
+            while sum([self.is_pos_edge[(i,j)] for (i,j) in zip(test_i_neg,test_j_neg)])>0:
+                test_i_neg = torch.randint(0,self.nft_size,size=(self.test_batch_size,))
+                test_j_neg = torch.randint(0,self.trader_size,size=(self.test_batch_size,))
             
             return test_i_pos, test_j_pos, test_i_neg, test_j_neg
 
@@ -268,7 +275,7 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
                 
                 # initialize model
                 model = LDM_BI(sparse_i=sparse_i,sparse_j=sparse_j,sparse_w=sparse_w,sparse_c=sparse_c,
-                            nft_size=N,trader_size=T,latent_dim=latent_dim,nft_sample_size=1000,
+                            nft_size=N,trader_size=T,latent_dim=latent_dim,nft_sample_size=1000,test_batch_size=500,
                             sparse_i_test=sparse_i_test,sparse_j_test=sparse_j_test,sparse_w_test=sparse_w_test,
                             trader_matrix=trader_matrix).to(device)         
 

@@ -99,6 +99,7 @@ class embedPlotterTri(embedPlotter):
             ax.scatter(*zip(*self.l3),s=0.1,label="NFTs")
             ax.scatter(*zip(*self.r3),s=0.1,label="Sellers")
             ax.scatter(*zip(*self.u3),s=0.1,label="Buyers")
+            ax.set_title("Rotation: " + str(i*360/(n_rot*n_rot)),y=-0.01)
             ax.view_init(azim=i*360/(n_rot*n_rot))
 
         lines, labels = fig.axes[-1].get_legend_handles_labels()
@@ -137,6 +138,6 @@ epb = embedPlotterBi(path)
 # embed plot structure tri
 ept = embedPlotterTri(path)
 #ept.scatter()
-ept.scatter3D(10)
+ept.scatter3D(4)
 #ept.categoryPlot()
 #ept.categoryPlot3D()

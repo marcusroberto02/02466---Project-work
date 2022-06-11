@@ -16,7 +16,7 @@ from sklearn.metrics import plot_confusion_matrix
 
 
 #nft_embeddings_path = "C:/Users/khelp/OneDrive/Desktop/4. semester/Fagprojekt/02466---Project-work/data/bi/nft_embeddings"
-path = r"C:\Users\khelp\OneDrive\Documents\GitHub\02466---Project-work\results_final\ETH\2021-02"
+path = "./results_final/ETH/2021-02"
 
 
 #################################################################
@@ -44,18 +44,20 @@ y_test = encoder.fit_transform(y_test)
 
 print(encoder.classes_)
 
-fontsize = 20
-fontsize_title = 22
-fontsize_ticks = 18
+fontsize = 40
+fontsize_title = 45
+fontsize_ticks = 35
 
 # plot class distribution train and test
 import matplotlib
 matplotlib.rcParams['mathtext.fontset'] = 'cm'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
+matplotlib.rcParams.update({'figure.autolayout': True})
 
-fig, axes = plt.subplots()
+fig, axes = plt.subplots(figsize=(20,20))
 plt.bar(np.unique(list(y_train)), height=[sum(y_train==c) for c in np.unique(list(y_train))])
 plt.xticks([0,1,2,3,4,5],encoder.classes_,rotation=45, fontsize=fontsize_ticks)
+plt.yticks(fontsize=fontsize_ticks)
 plt.ylabel('Count', fontsize=fontsize, weight='bold')
 plt.xlabel('Category', fontsize =fontsize, weight='bold')
 plt.title('Barplot of categories in the training data set', fontsize=fontsize_title, weight='bold')

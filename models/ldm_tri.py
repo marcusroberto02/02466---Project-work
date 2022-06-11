@@ -177,10 +177,10 @@ def run_ldm_tri(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batc
             test_j_neg = torch.randint(0,self.seller_size,size=(self.test_batch_size,))
             test_k_neg = torch.randint(0,self.buyer_size,size=(self.test_batch_size,))
 
-            while sum([self.is_pos_edge[(i,j,k)] for (i,j,k) in zip(test_i_neg,test_j_neg,test_k_neg)])>0:
-                test_i_neg = torch.randint(0,self.nft_size,size=(self.test_batch_size,))
-                test_j_neg = torch.randint(0,self.seller_size,size=(self.test_batch_size,))
-                test_k_neg = torch.randint(0,self.buyer_size,size=(self.test_batch_size,))
+            #while sum([self.is_pos_edge[(i,j,k)] for (i,j,k) in zip(test_i_neg,test_j_neg,test_k_neg)])>0:
+            #    test_i_neg = torch.randint(0,self.nft_size,size=(self.test_batch_size,))
+            #    test_j_neg = torch.randint(0,self.seller_size,size=(self.test_batch_size,))
+            #    test_k_neg = torch.randint(0,self.buyer_size,size=(self.test_batch_size,))
 
             return test_i_pos, test_j_pos, test_k_pos, test_i_neg, test_j_neg, test_k_neg
 

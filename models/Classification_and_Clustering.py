@@ -14,8 +14,9 @@ from plotly.subplots import make_subplots
 import plotly.offline as py
 from sklearn.metrics import plot_confusion_matrix
 
+
 #nft_embeddings_path = "C:/Users/khelp/OneDrive/Desktop/4. semester/Fagprojekt/02466---Project-work/data/bi/nft_embeddings"
-path = "./data/ETH/2020-10/bi"
+path = r"C:\Users\khelp\OneDrive\Documents\GitHub\02466---Project-work\results_final\ETH\2021-02"
 
 
 #################################################################
@@ -26,8 +27,9 @@ Node classification
 #################################################################
 
 #load nft embeddings as array in X and categories in y
-X = torch.load(path + "/results/D2/nft_embeddings").detach().numpy()
-y = np.loadtxt(path + "/sparse_c.txt",dtype="str").reshape(-1,1)
+X = torch.load(path + "/tri/results/D2/nft_embeddings").detach().numpy()
+y = np.loadtxt(path + "/tri/sparse_c.txt",dtype="str").reshape(-1,1)
+
 
 # split data into train and test
 X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.2, stratify=y,random_state=42)
@@ -41,6 +43,31 @@ y_train = encoder.fit_transform(y_train)
 y_test = encoder.fit_transform(y_test)
 
 print(encoder.classes_)
+
+fontsize = 20
+fontsize_title = 22
+fontsize_ticks = 18
+
+# plot class distribution train and test
+import matplotlib
+matplotlib.rcParams['mathtext.fontset'] = 'cm'
+matplotlib.rcParams['font.family'] = 'STIXGeneral'
+
+fig, axes = plt.subplots()
+plt.bar(np.unique(list(y_train)), height=[sum(y_train==c) for c in np.unique(list(y_train))])
+plt.xticks([0,1,2,3,4,5],encoder.classes_,rotation=45, fontsize=fontsize_ticks)
+plt.ylabel('Count', fontsize=fontsize, weight='bold')
+plt.xlabel('Category', fontsize =fontsize, weight='bold')
+plt.title('Barplot of categories in the training data set', fontsize=fontsize_title, weight='bold')
+plt.show()
+
+fig, axes = plt.subplots()
+plt.bar(np.unique(list(y_test)), height=[sum(y_test==c) for c in np.unique(list(y_test))])
+plt.xticks([0,1,2,3,4,5],encoder.classes_,rotation=45,fontsize=fontsize_ticks)
+plt.ylabel('Count', fontsize=fontsize, weight='bold')
+plt.xlabel('Category', fontsize =fontsize, weight='bold')
+plt.title('Barplot of categories in the test data set', fontsize=fontsize_title, weight='bold')
+plt.show()
 
 #Multinomial logistic regression
 logreg = lm.LogisticRegression(solver='lbfgs', multi_class='multinomial', random_state=1)
@@ -56,6 +83,11 @@ print('Confusion matrix for Multinomial regression:\n\t {0}'.format(confusion_ma
 
 # plot confusion matrix Multinomial logistic regression
 plot_confusion_matrix(logreg, X_test, y_test)
+plt.title('Confusion matrix - Multinomial logistic regression - tripartite 3D', fontsize=fontsize_title, weight='bold')
+plt.xticks([0,1,2,3,4,5],encoder.classes_,rotation=45,fontsize=fontsize_ticks)
+plt.yticks([0,1,2,3,4,5],encoder.classes_,rotation=45,fontsize=fontsize_ticks)
+plt.xlabel('Predicted label', fontsize=fontsize, weight='bold')
+plt.ylabel('True label', fontsize=fontsize,weight='bold')
 plt.show()
 
 
@@ -71,7 +103,7 @@ for n in neighbours:
 plt.plot(neighbours,knn_scores)
 plt.xlabel("Number of neighbours")
 plt.ylabel("Accuracy")
-plt.title("KNN performance on the bipartite model")
+plt.title("KNN accuracy as a function of neighbors - tripartite 3D")
 plt.show()
 
 #Metrics
@@ -87,6 +119,11 @@ print('Confusion matrix for KNN:\n\t {0}'.format(confusion_matrix(y_test, knn.pr
 
 # plot confusion matrix knn
 plot_confusion_matrix(knn, X_test, y_test)
+plt.title('Confusion matrix - KNN - tripartite 3D', fontsize=fontsize_title, weight='bold')
+plt.xticks([0,1,2,3,4,5],encoder.classes_,rotation=45,fontsize=fontsize_ticks)
+plt.yticks([0,1,2,3,4,5],encoder.classes_,rotation=45,fontsize=fontsize_ticks)
+plt.xlabel('Predicted label', fontsize=fontsize, weight='bold')
+plt.ylabel('True label', fontsize=fontsize,weight='bold')
 plt.show()
 
 
@@ -96,51 +133,7 @@ y_pred = [majority_class] * len(y_test)
 
 accuracy = np.sum(y_pred == y_test) / len(y_test)
 print("Majority class voting accuracy:",accuracy)
-#################################################################
-'''
-Clustering
+misclassifications = np.sum(y_pred!=y_test)
+print("number of misclassifications majorityvoting:",misclassifications)
 
-'''
-#################################################################
-
-kmeans = KMeans(n_clusters=6, random_state=0).fit(X)
-
-label = kmeans.labels_
-
-u_labels = np.unique(label)
-
-fig = plt.figure(figsize = (12,12))
-ax1 = fig.add_subplot(121)
-ax2 = fig.add_subplot(122)
-#fig, axs = plt.subplots(1, 2, sharex=True, sharey=True)
-
-for i in u_labels:
-    ax1.scatter(X[label == i, 0], X[label == i, 1], s=0.1, label='cluster %d' % i)
-#axs[0].legend()
-ax1.set_title("Kmeans")
-
-colors = {'Art':'green', 'Collectible':'blue', 'Games':'red','Metaverse':'orange','Other':'purple','Utility':'brown'}
-
-for category, color in colors.items():
-    ax2.scatter(*zip(*X[y==category][:,:2]),s=0.1,c=color,label=category)
-ax2.legend(loc="upper right", markerscale=15)
-ax2.set_title("True classification - Bipartite model")
-
-plt.show()
-
-
-
-
-# 3d scatterplot using plotly
-"""
-Scene = dict(xaxis = dict(title  = 'x -->'),yaxis = dict(title  = 'y--->'),zaxis = dict(title  = 'z-->'))
-
-# model.labels_ is nothing but the predicted clusters i.e y_clusters
-labels = encoder.fit_transform(y)
-trace = go.Scatter3d(x=X[:, 0], y=X[:, 1], z=X[:, 2], mode='markers',marker=dict(color = labels, size= 10, line=dict(color= 'black',width = 10)))
-layout = go.Layout(margin=dict(l=0,r=0),scene = Scene,height = 800,width = 800)
-data = [trace]
-fig = go.Figure(data = data, layout = layout)
-fig.show()
-"""
 

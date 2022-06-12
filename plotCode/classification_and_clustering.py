@@ -89,8 +89,8 @@ class Formatter(DataFrame):
         plt.text(x=0.53, y=title_y[1], s=subtitle, fontsize=self.fontsize_subtitle, ha="center", transform=self.fig.transFigure)
 
     def set_axislabels(self,xlabel,ylabel):
-        plt.ylabel(xlabel, fontsize=self.fontsize_labels, weight='bold')
-        plt.xlabel(ylabel, fontsize=self.fontsize_labels, weight='bold')
+        plt.xlabel(xlabel, fontsize=self.fontsize_labels, weight='bold')
+        plt.ylabel(ylabel, fontsize=self.fontsize_labels, weight='bold')
 
     def format_plot(self,title="Basic title",subtitle="Basic subtitle",title_y=(0.94,0.88),xlabel="Basic x-label",ylabel="Basic y-label"):
         self.set_titles(title=title,subtitle=subtitle,title_y=title_y)
@@ -265,8 +265,11 @@ cp = ClassicationPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
 ###################
 
 class EmbeddingPlotter(Formatter):
+    #
+    
     def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
         super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)  
+
 
 
 
@@ -275,5 +278,21 @@ class EmbeddingPlotter(Formatter):
 ###################
 
 class LinkPredictionPlotter(Formatter):
+    # standard size
+    figsize = (20,20)
+
+    # y position of title and subtitle
+    fig_title_y = (0.95,0.90) 
+
     def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
         super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+
+    
+    def make_dummy_plot(self,save=False,show=False):
+        self.fig = plt.figure(figsize=self.figsize)
+        # LAV SELVE PLOTTET HER
+        self.format_plot(title="Basic title",subtitle=self.bmname,title_y=self.fig_title_y,xlabel="Basic X-label",ylabel="Basic Y-label")
+        if save:
+            plt.savefig("{path}/NAVN PÅ PLOT".format(path=self.store_path))
+        if show:
+            plt.show()

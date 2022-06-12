@@ -1,0 +1,5 @@
+Number of unique NFTs: 26317
+Number of unique sellers: 3351
+Number of unique buyers: 4964
+Number of unique trades: 30784
+Number of unique categories: 6

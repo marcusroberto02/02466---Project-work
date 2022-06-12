@@ -74,7 +74,7 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
             self.sampling_weights_test = torch.ones(self.test_size,device=device)
 
             # size of each test batch
-            self.test_batch_size = test_batch_size
+            self.test_batch_size = min(len(self.sparse_i_test),test_batch_size)
 
             # PARAMETERS
             # nft embeddings
@@ -268,7 +268,7 @@ def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batch
                 T=int(len(sparse_j.unique()))
 
                 # categories for each nft
-                sparse_c = np.loadtxt(dataset + "/bi/sparse_c.txt",dtype='str')
+                sparse_c = np.loadtxt(dataset + "/bi/sparse_c.txt",dtype='<U15')
 
                 # trader category matrices
                 trader_matrix = pd.read_csv(dataset+"/bi/train/tradercategories.csv")

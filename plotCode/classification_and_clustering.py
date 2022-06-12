@@ -335,7 +335,7 @@ mtype="tri"
 dim=2
 
 ep = EmbeddingPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
-ep.make_scatter_plot(plot3d=True)
+#ep.make_scatter_plot(plot3d=True)
 
 
     
@@ -378,7 +378,7 @@ class LinkPredictionPlotter(Formatter):
         if type == "PR":
             plt.plot(dims,PR_scores)
         plt.xticks(range(1,11))
-        self.format_plot(title = "{type} score pr latent dimension", subtitle=self.bmname,
+        self.format_plot(title = "{type} AUC score pr latent dimension", subtitle=self.bmname,
                          title_y=self.fig_title_y,xlabel="Nr of latent dimensions",ylabel=f"{type} score")
         if save:
             plt.savefig("{path}/{type}_dim_plot".format(path=self.store_path, type = type))
@@ -391,10 +391,28 @@ class LinkPredictionPlotter(Formatter):
         path = f"/results/D{self.dim}/{type.lower()}_train.txt"
 
         scores = np.loadtxt(self.results_path+path)
-
         plt.plot(*scores.T, color = "black")
 
-        self.format_plot(title=f"{type} score as a function of epochs", subtitle=self.dataname,
+        self.format_plot(title=f"{type} AUC score as a function of epochs", subtitle=self.dataname,
+                         title_y=self.fig_title_y, xlabel="Nr of epochs", ylabel=f"{type} score")
+        if save:
+            plt.savefig("{path}/{type}_epoch_plot".format(path=self.store_path, type=type))
+        if show:
+            plt.show()
+
+    def baseline_comparison(self, type = "ROC", save = False,show = False):
+        self.fig = plt.figure(figsize=self.figsize)
+
+        path = f"/results/D{self.dim}/"
+
+
+        scores = np.loadtxt(self.results_path + path+f"{type.lower()}_train.txt")
+        baseline_scores = np.loadtxt(self.results_path + path + "baseline_accuracy_train.txt")
+        plt.plot(*scores.T, color="black", label = "Link prediction")
+        plt.plot(*baseline_scores.T, color = "green", label = "Baseline model")
+        plt.legend()
+
+        self.format_plot(title=f"{type} AUC score as a function of epochs", subtitle=self.dataname,
                          title_y=self.fig_title_y, xlabel="Nr of epochs", ylabel=f"{type} score")
         if save:
             plt.savefig("{path}/{type}_epoch_plot".format(path=self.store_path, type=type))
@@ -411,5 +429,15 @@ class LinkPredictionPlotter(Formatter):
         if show:
             plt.show()
 
+<<<<<<< HEAD
 #test = LinkPredictionPlotter().ROC_PR_plot(show = True)
 #test = LinkPredictionPlotter().ROC_PR_epoch(show = True)
+=======
+linkprediction = LinkPredictionPlotter(blockchain,month,mtype,dim)
+linkprediction.ROC_PR_epoch(show = True, type = "PR")
+linkprediction.ROC_PR_epoch(show = True)
+linkprediction.ROC_PR_dim(show = True, type = "PR")
+linkprediction.ROC_PR_dim(show = True)
+linkprediction.baseline_comparison(show = True, type = "PR")
+linkprediction.baseline_comparison(show = True)
+>>>>>>> b62995cb7f9565091520ab3cd9f313711686dc48

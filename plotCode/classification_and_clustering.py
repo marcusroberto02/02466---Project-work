@@ -277,13 +277,31 @@ class EmbeddingPlotter(Formatter):
     # color for embeddings
     colors = {'Games':'red','Art':'green','Collectible':'blue','Metaverse':'orange','Other':'purple','Utility':'brown'}
     
+    # empty embedding variables for bi
+    z = None
+    q = None
+
+    # empty embedding variables for tri
+    l = None
+    r = None
+    u = None
+
     def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
         super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
         self.store_path += "/EmbeddingPlots"
         if not os.path.exists(self.store_path):
             os.makedirs(self.store_path)    
     
-    
+    def load_embeddings_bi(self):
+        self.z = torch.load("{path}/bi/results/D{dim}/nft_embeddings".format(path=self.path,dim=self.dim)).detach().numpy()
+        self.q = torch.load("{path}/bi/results/D{dim}/trader_embeddings".format(path=self.path,dim=self.dim)).detach().numpy()
+
+    def make_scatter_plot(self):
+        if self.mtype == "bi":
+
+            self.load_embeddings_bi()
+
+
     
 
 

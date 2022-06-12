@@ -306,16 +306,23 @@ class EmbeddingPlotter(Formatter):
         self.u = torch.load("{path}/tri/results/D{dim}/buyer_embeddings".format(path=self.path,dim=self.dim)).detach().numpy()
 
     def make_scatter_plot(self,d1=1,d2=2,d3=3,plot3d=False):
-        fig = plt.figure(figsize=self.figsize)
+        self.fig = plt.figure(figsize=self.figsize)
         if plot3d:
             if self.dim < 3:
-                raise Exception("printhey")
-        
-        ax = fig.add_subplot(projection='3d')
-
+                raise Exception("Cannot plot {dim}D embeddings in 3D".format(dim=self.dim))
+            if not (d1 in range(1,self.dim+1) and d2 in range(1,self.dim+1) and d3 in range(1,self.dim+1)):
+                raise Exception("Invalid choice of coordinate dimensions")
+            self.ax = self.fig.add_subplot(projection='3d')
+        else:
+            if not (d1 in range(1,self.dim+1) and d2 in range(1,self.dim+1)):
+                raise Exception("Invalid choice of coordinate dimensions")
+            self.ax = self.fig.add_subplot()
+                
         if self.mtype == "bi":
+            self.make_scatter_plot_bi()
             if self.z is None or self.q is None:
                 self.load_embeddings_bi()
+            ax = 2
             
         elif self.mtype == "tri":
             if self.l is None or self.r is None or self.u is None:
@@ -424,6 +431,10 @@ class LinkPredictionPlotter(Formatter):
         if show:
             plt.show()
 
+<<<<<<< HEAD
+#test = LinkPredictionPlotter().ROC_PR_plot(show = True)
+#test = LinkPredictionPlotter().ROC_PR_epoch(show = True)
+=======
 linkprediction = LinkPredictionPlotter(blockchain,month,mtype,dim)
 linkprediction.ROC_PR_epoch(show = True, type = "PR")
 linkprediction.ROC_PR_epoch(show = True)
@@ -431,3 +442,4 @@ linkprediction.ROC_PR_dim(show = True, type = "PR")
 linkprediction.ROC_PR_dim(show = True)
 linkprediction.baseline_comparison(show = True, type = "PR")
 linkprediction.baseline_comparison(show = True)
+>>>>>>> b62995cb7f9565091520ab3cd9f313711686dc48

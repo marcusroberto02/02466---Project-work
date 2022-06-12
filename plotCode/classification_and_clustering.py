@@ -332,19 +332,23 @@ class LinkPredictionPlotter(Formatter):
         dims = range(1,11)
         for i in dims:
             with open(self.results_path + f"/results/D{i}/ROC-PR-MA-BA.txt", 'r') as f:
-                roc_mean, roc_std, pr_mean, pr_std = [float(l.strip().split()[-1]) for l in f.readlines()]
-                ROC_scores.append(roc_mean)
-                PR_scores.append(pr_mean)
+                vals = [float(l.strip().split()[-1]) for l in f.readlines()]
+                print(vals)
+                ROC_scores.append(vals[0])
+                PR_scores.append(vals[2])
         if type == "ROC":
             plt.plot(dims,ROC_scores)
         if type == "PR":
             plt.plot(dims,PR_scores)
-        self.format_plot(title = f"{type} as a function of latent dimensions", subtitle=self.bmname,
+        plt.xticks(range(1,11))
+        self.format_plot(title = f"{type} score pr latent dimension", subtitle=self.bmname,
                          title_y=self.fig_title_y,xlabel="Nr of latent dimensions",ylabel=f"{type} score")
         if save:
-            plt.savefig("{path}/NAVN PÅ PLOT".format(path=self.store_path))
+            plt.savefig("{path}/{type}_dim_plot".format(path=self.store_path, type = type))
         if show:
             plt.show()
+
+
     def make_dummy_plot(self,save=False,show=False):
         self.fig = plt.figure(figsize=self.figsize)
         # LAV SELVE PLOTTET HER

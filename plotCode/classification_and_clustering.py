@@ -345,7 +345,9 @@ class LinkPredictionPlotter(Formatter):
     figsize = (20,20)
 
     # y position of title and subtitle
-    fig_title_y = (0.95,0.90) 
+    fig_title_y = (0.95,0.90)
+
+    line_width = 5
 
     def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
         super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
@@ -367,9 +369,9 @@ class LinkPredictionPlotter(Formatter):
                 ROC_scores.append(vals[0])
                 PR_scores.append(vals[2])
         if type == "ROC":
-            plt.plot(dims,ROC_scores)
+            plt.plot(dims,ROC_scores, lv = self.line_width)
         if type == "PR":
-            plt.plot(dims,PR_scores)
+            plt.plot(dims,PR_scores, lv = self.line_width)
         plt.xticks(range(1,11))
         self.format_plot(title = "{type} AUC score pr latent dimension", subtitle=self.bmname,
                          title_y=self.fig_title_y,xlabel="Nr of latent dimensions",ylabel=f"{type} score")
@@ -384,7 +386,7 @@ class LinkPredictionPlotter(Formatter):
         path = f"/results/D{self.dim}/{type.lower()}_train.txt"
 
         scores = np.loadtxt(self.results_path+path)
-        plt.plot(*scores.T, color = "black")
+        plt.plot(*scores.T, color = "black", lv = self.line_width)
 
         self.format_plot(title=f"{type} AUC score as a function of epochs", subtitle=self.dataname,
                          title_y=self.fig_title_y, xlabel="Nr of epochs", ylabel=f"{type} score")
@@ -401,8 +403,8 @@ class LinkPredictionPlotter(Formatter):
 
         scores = np.loadtxt(self.results_path + path+f"{type.lower()}_train.txt")
         baseline_scores = np.loadtxt(self.results_path + path + "baseline_accuracy_train.txt")
-        plt.plot(*scores.T, color="black", label = "Link prediction")
-        plt.plot(*baseline_scores.T, color = "green", label = "Baseline model")
+        plt.plot(*scores.T, color="black", label = "Link prediction", lv = self.line_width)
+        plt.plot(*baseline_scores.T, color = "green", label = "Baseline model", lv = self.line_width)
         plt.legend()
 
         self.format_plot(title=f"{type} AUC score as a function of epochs", subtitle=self.dataname,

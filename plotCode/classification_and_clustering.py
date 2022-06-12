@@ -284,6 +284,7 @@ class EmbeddingPlotter(Formatter):
             os.makedirs(self.store_path)    
     
     
+    
 
 
 

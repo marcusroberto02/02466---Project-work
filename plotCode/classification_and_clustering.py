@@ -118,6 +118,9 @@ class ClassicationPlotter(Formatter):
     # y position of title and subtitle confusion matrix
     cm_title_y = (0.94,0.89)
 
+    # standard line width
+    lw = 5
+
     # empty model variables
     logreg = None
     knn = None
@@ -183,7 +186,7 @@ class ClassicationPlotter(Formatter):
         
         if save or show:
             self.fig = plt.figure(figsize=self.barplot_figsize)
-            plt.plot(n_neighbors,knn_scores,linewidth=5)
+            plt.plot(n_neighbors,knn_scores,linewidth=lw)
             self.format_plot(title="K-nearest neighbors performance plot",subtitle=self.dataname,title_y=self.barplot_title_y,xlabel="Number of neighbors",ylabel="Accuracy")
         
         if save:
@@ -429,10 +432,8 @@ class LinkPredictionPlotter(Formatter):
         if show:
             plt.show()
 
-<<<<<<< HEAD
 #test = LinkPredictionPlotter().ROC_PR_plot(show = True)
 #test = LinkPredictionPlotter().ROC_PR_epoch(show = True)
-=======
 linkprediction = LinkPredictionPlotter(blockchain,month,mtype,dim)
 linkprediction.ROC_PR_epoch(show = True, type = "PR")
 linkprediction.ROC_PR_epoch(show = True)
@@ -440,4 +441,3 @@ linkprediction.ROC_PR_dim(show = True, type = "PR")
 linkprediction.ROC_PR_dim(show = True)
 linkprediction.baseline_comparison(show = True, type = "PR")
 linkprediction.baseline_comparison(show = True)
->>>>>>> b62995cb7f9565091520ab3cd9f313711686dc48

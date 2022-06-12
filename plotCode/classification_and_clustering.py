@@ -431,10 +431,7 @@ class LinkPredictionPlotter(Formatter):
         if show:
             plt.show()
 
-<<<<<<< HEAD
-#test = LinkPredictionPlotter().ROC_PR_plot(show = True)
-#test = LinkPredictionPlotter().ROC_PR_epoch(show = True)
-=======
+
 linkprediction = LinkPredictionPlotter(blockchain,month,mtype,dim)
 linkprediction.ROC_PR_epoch(show = True, type = "PR")
 linkprediction.ROC_PR_epoch(show = True)
@@ -442,4 +439,3 @@ linkprediction.ROC_PR_dim(show = True, type = "PR")
 linkprediction.ROC_PR_dim(show = True)
 linkprediction.baseline_comparison(show = True, type = "PR")
 linkprediction.baseline_comparison(show = True)
->>>>>>> b62995cb7f9565091520ab3cd9f313711686dc48

@@ -18,7 +18,7 @@ import os
 import matplotlib
 matplotlib.rcParams.update({'figure.autolayout': True})
 
-class dataFrame:
+class DataFrame:
     # base path for loading embeddings
     resultsbase = "./results_final"
 
@@ -77,26 +77,10 @@ class dataFrame:
         for i, cname in enumerate(self.encoder.classes_):
             print("{name} --> {eid}".format(name=cname,eid=i))
     
-class classicationPlotter(dataFrame):
-    # size of bar plots
-    barplot_figsize = (20,20)
-
-    # y position of title and subtitle barplot
-    barplot_title_y = (0.95,0.90) 
-
-    # size of confusion matrix plots
-    cm_figsize = (16,16)
-
-    # y position of title and subtitle confusion matrix
-    cm_title_y = (0.94,0.89) 
-
-    # empty model variables
-    logreg = None
-    knn = None
-
-    def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
+class Formatter(DataFrame):
+    def __init__(self, blockchain="ETH", month="2021-02", mtype="bi", dim=2):
         super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
-        # make plotname for specific model type and 
+        # make plotname for specific model type and dimension
         self.bmname = "{blockchain}-{month}".format(blockchain=blockchain,month=month)
         self.dataname = "{blockchain}-{month}: {mtype}partite {dim:d}D".format(blockchain=blockchain,month=month,mtype=self.mtype.capitalize(),dim=self.dim)
 
@@ -112,6 +96,31 @@ class classicationPlotter(dataFrame):
     def format_plot(self,title="Basic title",subtitle="Basic subtitle",title_y=(0.94,0.88),xlabel="Basic x-label",ylabel="Basic y-label"):
         self.set_titles(title=title,subtitle=subtitle,title_y=title_y)
         self.set_axislabels(xlabel=xlabel,ylabel=ylabel)
+
+
+#######################
+# NODE CLASSIFICATION #
+#######################
+
+class ClassicationPlotter(Formatter):
+    # size of bar plots
+    barplot_figsize = (20,20)
+
+    # y position of title and subtitle barplot
+    barplot_title_y = (0.95,0.90) 
+
+    # size of confusion matrix plots
+    cm_figsize = (16,16)
+
+    # y position of title and subtitle confusion matrix
+    cm_title_y = (0.94,0.89)
+
+    # empty model variables
+    logreg = None
+    knn = None
+
+    def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
+        super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)        
 
     def make_barplot(self,data,title="Barplot"):
         self.fig = plt.figure(figsize=self.barplot_figsize)
@@ -238,23 +247,34 @@ class classicationPlotter(dataFrame):
 blockchain="ETH"
 month="2021-02"
 mtype="tri"
-dim=2
+dim=5
 
-cp = classicationPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
-cp.print_class_distribution()
-cp.print_encoding_labels()
-cp.make_barplot_train(save=True)
-cp.make_barplot_test(save=True)
-cp.make_confusion_matrix("multinomial",save=True)
-cp.make_confusion_matrix("KNN",save=True)
-cp.make_confusion_matrix("Optimal KNN",save=True)
-cp.train_optimal_k_nearest_neighbors(save=True)
-cp.print_baseline_model_performance()
-
-
+cp = ClassicationPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+#cp.print_class_distribution()
+#cp.print_encoding_labels()
+#cp.make_barplot_train(save=True)
+#cp.make_barplot_test(save=True)
+#cp.make_confusion_matrix("multinomial",save=True)
+#cp.make_confusion_matrix("KNN",save=True)
+#cp.make_confusion_matrix("Optimal KNN",save=True)
+#cp.train_optimal_k_nearest_neighbors(save=True)
+#cp.print_baseline_model_performance()
 
 
+###################
+# EMBEDDING PLOTS #
+###################
 
-#print('ROC AUC for Multinomial regression:\n\t {0}'.format(roc_auc_score(y_test, logreg.predict(X_test))))
-#print('Precision for Multinomial regression:\n\t {0}'.format(precision_score(y_test, logreg.predict(X_test))))
-#print('Recall for Multinomial regression:\n\t {0}'.format(recall_score(y_test, logreg.predict(X_test))))
+class EmbeddingPlotter(Formatter):
+    def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
+        super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)  
+
+
+
+###################
+# LINK PREDICTION #
+###################
+
+class LinkPredictionPlotter(Formatter):
+    def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
+        super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)

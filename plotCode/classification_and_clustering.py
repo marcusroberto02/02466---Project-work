@@ -363,7 +363,7 @@ class LinkPredictionPlotter(Formatter):
 
         plt.plot(*scores.T, color = "black")
 
-        self.format_plot(title=f"{type} score as a function of epochs", subtitle=self.bmname,
+        self.format_plot(title=f"{type} score as a function of epochs", subtitle=self.dataname,
                          title_y=self.fig_title_y, xlabel="Nr of epochs", ylabel=f"{type} score")
         if save:
             plt.savefig("{path}/{type}_epoch_plot".format(path=self.store_path, type=type))
@@ -374,7 +374,7 @@ class LinkPredictionPlotter(Formatter):
     def make_dummy_plot(self,save=False,show=False):
         self.fig = plt.figure(figsize=self.figsize)
         # LAV SELVE PLOTTET HER
-        self.format_plot(title="Basic title",subtitle=self.bmname,title_y=self.fig_title_y,xlabel="Basic X-label",ylabel="Basic Y-label")
+        self.format_plot(title="Basic title",subtitle=self.dataname,title_y=self.fig_title_y,xlabel="Basic X-label",ylabel="Basic Y-label")
         if save:
             plt.savefig("{path}/NAVN PÅ PLOT".format(path=self.store_path))
         if show:

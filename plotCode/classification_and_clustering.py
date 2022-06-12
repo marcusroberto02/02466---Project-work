@@ -31,26 +31,14 @@ class DataFrame:
         self.mtype = mtype
         self.dim = dim
         self.setup_paths()
-        self.initialize_fontsizes()
         self.preprocess_data()
     
-
     def setup_paths(self):
         # path for loading results
         self.results_path = self.resultsbase + "/" + self.blockchain + "/" + self.month + "/" + self.mtype
 
         # path for storing plots
         self.store_path = self.figurebase + "/" + self.blockchain + "/" + self.month + "/Classification"
-
-    def initialize_fontsizes(self):
-        # fontsizes for plots
-        self.fontsize_title = 45
-        self.fontsize_subtitle = 35
-        self.fontsize_labels = 40
-        self.fontsize_ticks = 35
-        self.fontsize_values = 30
-        # used to make values bigger in plots
-        matplotlib.rcParams["font.size"] = self.fontsize_values
 
     def preprocess_data(self):
         #load nft embeddings as array in X and categories in y
@@ -79,10 +67,21 @@ class DataFrame:
     
 class Formatter(DataFrame):
     def __init__(self, blockchain="ETH", month="2021-02", mtype="bi", dim=2):
+        self.initialize_fontsizes()
         super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
         # make plotname for specific model type and dimension
         self.bmname = "{blockchain}-{month}".format(blockchain=blockchain,month=month)
         self.dataname = "{blockchain}-{month}: {mtype}partite {dim:d}D".format(blockchain=blockchain,month=month,mtype=self.mtype.capitalize(),dim=self.dim)
+
+    def initialize_fontsizes(self):
+        # fontsizes for plots
+        self.fontsize_title = 45
+        self.fontsize_subtitle = 35
+        self.fontsize_labels = 40
+        self.fontsize_ticks = 35
+        self.fontsize_values = 30
+        # used to make values bigger in plots
+        matplotlib.rcParams["font.size"] = self.fontsize_values
 
     def set_titles(self,title,subtitle,title_y=(0.94,0.88)):
         # code for introducing subtitle

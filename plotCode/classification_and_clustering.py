@@ -1,3 +1,4 @@
+from logging import raiseExceptions
 import pandas as pd
 from sympy import block_collapse
 import torch
@@ -12,11 +13,18 @@ from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from collections import Counter
 import os
 import matplotlib
+import platform
+
 matplotlib.rcParams.update({'figure.autolayout': True})
+
+ndots = "."
+
+if platform.system() == "Darwin":
+    ndots = ".."
 
 class DataFrame:
     # base path for loading embeddings
-    resultsbase = "../results_final"
+    resultsbase = "{dots}/results_final".format(dots=ndots)
 
     # base path for storing figures
     figurebase = "C:/Users/marcu/Google Drev/DTU/02466(fagprojekt)/Figurer"
@@ -247,7 +255,7 @@ month="2021-02"
 mtype="tri"
 dim=5
 
-cp = ClassicationPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+#cp = ClassicationPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
 #cp.print_class_distribution()
 #cp.print_encoding_labels()
 #cp.make_barplot_train(save=True)
@@ -297,14 +305,30 @@ class EmbeddingPlotter(Formatter):
         self.r = torch.load("{path}/tri/results/D{dim}/seller_embeddings".format(path=self.path,dim=self.dim)).detach().numpy()
         self.u = torch.load("{path}/tri/results/D{dim}/buyer_embeddings".format(path=self.path,dim=self.dim)).detach().numpy()
 
-    def make_scatter_plot(self,d1=1,d2=2):
+    def make_scatter_plot(self,d1=1,d2=2,d3=3,plot3d=False):
+        fig = plt.figure(figsize=self.figsize)
+        if plot3d:
+            if self.dim < 3:
+                raise Exception("printhey")
+        
+        ax = fig.add_subplot(projection='3d')
+
         if self.mtype == "bi":
             if self.z is None or self.q is None:
                 self.load_embeddings_bi()
+            
         elif self.mtype == "tri":
             if self.l is None or self.r is None or self.u is None:
                 self.load_embeddings_tri()
 
+# choose data set to investigate
+blockchain="ETH"
+month="2021-02"
+mtype="tri"
+dim=2
+
+ep = EmbeddingPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+ep.make_scatter_plot(plot3d=True)
 
 
     
@@ -350,7 +374,7 @@ class LinkPredictionPlotter(Formatter):
         if type == "PR":
             plt.plot(dims,PR_scores)
         plt.xticks(range(1,11))
-        self.format_plot(title = f"{type} score pr latent dimension", subtitle=self.bmname,
+        self.format_plot(title = "{type} score pr latent dimension", subtitle=self.bmname,
                          title_y=self.fig_title_y,xlabel="Nr of latent dimensions",ylabel=f"{type} score")
         if save:
             plt.savefig("{path}/{type}_dim_plot".format(path=self.store_path, type = type))
@@ -367,4 +391,4 @@ class LinkPredictionPlotter(Formatter):
         if show:
             plt.show()
 
-test = LinkPredictionPlotter().ROC_PR_plot(show = True)
+#test = LinkPredictionPlotter().ROC_PR_plot(show = True)

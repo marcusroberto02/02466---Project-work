@@ -38,7 +38,7 @@ class DataFrame:
         self.results_path = self.resultsbase + "/" + self.blockchain + "/" + self.month + "/" + self.mtype
 
         # path for storing plots
-        self.store_path = self.figurebase + "/" + self.blockchain + "/" + self.month + "/Classification"
+        self.store_path = self.figurebase + "/" + self.blockchain + "/" + self.month
 
     def preprocess_data(self):
         #load nft embeddings as array in X and categories in y
@@ -119,7 +119,10 @@ class ClassicationPlotter(Formatter):
     knn = None
 
     def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
-        super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)        
+        super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+        self.store_path += "/Classification"
+        if not os.path.exists(self.store_path):
+            os.makedirs(self.store_path)     
 
     def make_barplot(self,data,title="Barplot"):
         self.fig = plt.figure(figsize=self.barplot_figsize)
@@ -265,10 +268,22 @@ cp = ClassicationPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
 ###################
 
 class EmbeddingPlotter(Formatter):
-    #
+    # standard size
+    figsize = (20,20)
+
+    # y position of title and subtitle
+    fig_title_y = (0.95,0.90) 
+
+    # color for embeddings
+    colors = {'Games':'red','Art':'green','Collectible':'blue','Metaverse':'orange','Other':'purple','Utility':'brown'}
     
     def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
-        super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)  
+        super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+        self.store_path += "/EmbeddingPlots"
+        if not os.path.exists(self.store_path):
+            os.makedirs(self.store_path)    
+    
+    
 
 
 
@@ -286,6 +301,9 @@ class LinkPredictionPlotter(Formatter):
 
     def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
         super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+        self.store_path += "/LinkPrediction"
+        if not os.path.exists(self.store_path):
+            os.makedirs(self.store_path)    
 
     
     def make_dummy_plot(self,save=False,show=False):

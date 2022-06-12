@@ -354,14 +354,11 @@ class LinkPredictionPlotter(Formatter):
             os.makedirs(self.store_path)    
 
 
-    def ROC_PR_plot(self, type = "ROC", save = False, show = False):
+    def ROC_PR_dim(self, type = "ROC", save = False, show = False):
         self.fig = plt.figure(figsize=self.figsize)
-        self.format_plot(title="Basic title", subtitle=self.bmname, title_y=self.fig_title_y, xlabel="Basic X-label",
-                         ylabel="Basic Y-label")
         ROC_scores = []
-        ROC_errorbars = []
         PR_scores = []
-        PR_errorbars = []
+
         dims = range(1,11)
         for i in dims:
             with open(self.results_path + f"/results/D{i}/ROC-PR-MA-BA.txt", 'r') as f:
@@ -381,14 +378,31 @@ class LinkPredictionPlotter(Formatter):
         if show:
             plt.show()
 
+    def ROC_PR_epoch(self,type = "ROC",save = False, show = False):
+        self.fig = plt.figure(figsize = self.figsize)
+
+        path = f"/results/D{self.dim}/{type.lower()}_train.txt"
+
+        scores = np.loadtxt(self.results_path+path)
+
+        plt.plot(*scores.T, color = "black")
+
+        self.format_plot(title=f"{type} score as a function of epochs", subtitle=self.dataname,
+                         title_y=self.fig_title_y, xlabel="Nr of epochs", ylabel=f"{type} score")
+        if save:
+            plt.savefig("{path}/{type}_epoch_plot".format(path=self.store_path, type=type))
+        if show:
+            plt.show()
+
 
     def make_dummy_plot(self,save=False,show=False):
         self.fig = plt.figure(figsize=self.figsize)
         # LAV SELVE PLOTTET HER
-        self.format_plot(title="Basic title",subtitle=self.bmname,title_y=self.fig_title_y,xlabel="Basic X-label",ylabel="Basic Y-label")
+        self.format_plot(title="Basic title",subtitle=self.dataname,title_y=self.fig_title_y,xlabel="Basic X-label",ylabel="Basic Y-label")
         if save:
             plt.savefig("{path}/NAVN PÅ PLOT".format(path=self.store_path))
         if show:
             plt.show()
 
 #test = LinkPredictionPlotter().ROC_PR_plot(show = True)
+test = LinkPredictionPlotter().ROC_PR_epoch(show = True)

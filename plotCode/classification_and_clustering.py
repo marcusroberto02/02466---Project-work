@@ -328,7 +328,7 @@ mtype="tri"
 dim=2
 
 ep = EmbeddingPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
-ep.make_scatter_plot(plot3d=True)
+#ep.make_scatter_plot(plot3d=True)
 
 
     
@@ -384,8 +384,26 @@ class LinkPredictionPlotter(Formatter):
         path = f"/results/D{self.dim}/{type.lower()}_train.txt"
 
         scores = np.loadtxt(self.results_path+path)
-
         plt.plot(*scores.T, color = "black")
+
+        self.format_plot(title=f"{type} score as a function of epochs", subtitle=self.dataname,
+                         title_y=self.fig_title_y, xlabel="Nr of epochs", ylabel=f"{type} score")
+        if save:
+            plt.savefig("{path}/{type}_epoch_plot".format(path=self.store_path, type=type))
+        if show:
+            plt.show()
+
+    def baseline_comparison(self, type = "ROC", save = False,show = False):
+        self.fig = plt.figure(figsize=self.figsize)
+
+        path = f"/results/D{self.dim}/"
+
+
+        scores = np.loadtxt(self.results_path + path+f"{type.lower()}_train.txt")
+        baseline_scores = np.loadtxt(self.results_path + path + "baseline_accuracy_train.txt")
+        plt.plot(*scores.T, color="black", label = "Link prediction")
+        plt.plot(*baseline_scores.T, color = "green", label = "Baseline model")
+        plt.legend()
 
         self.format_plot(title=f"{type} score as a function of epochs", subtitle=self.dataname,
                          title_y=self.fig_title_y, xlabel="Nr of epochs", ylabel=f"{type} score")
@@ -405,4 +423,6 @@ class LinkPredictionPlotter(Formatter):
             plt.show()
 
 #test = LinkPredictionPlotter().ROC_PR_plot(show = True)
+test = LinkPredictionPlotter().ROC_PR_epoch(show = True,type = "PR")
 test = LinkPredictionPlotter().ROC_PR_epoch(show = True)
+test = LinkPredictionPlotter().baseline_comparison(show = True)

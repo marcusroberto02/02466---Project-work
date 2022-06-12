@@ -119,7 +119,7 @@ class ClassicationPlotter(Formatter):
     cm_title_y = (0.94,0.89)
 
     # standard line width
-    lw = 5
+    linewidth = 5
 
     # empty model variables
     logreg = None
@@ -186,7 +186,7 @@ class ClassicationPlotter(Formatter):
         
         if save or show:
             self.fig = plt.figure(figsize=self.barplot_figsize)
-            plt.plot(n_neighbors,knn_scores,linewidth=lw)
+            plt.plot(n_neighbors,knn_scores,linewidth=self.lw)
             self.format_plot(title="K-nearest neighbors performance plot",subtitle=self.dataname,title_y=self.barplot_title_y,xlabel="Number of neighbors",ylabel="Accuracy")
         
         if save:
@@ -355,7 +355,10 @@ class LinkPredictionPlotter(Formatter):
     figsize = (20,20)
 
     # y position of title and subtitle
-    fig_title_y = (0.95,0.90) 
+    fig_title_y = (0.95,0.90)
+
+    # standard linewidth
+    linewidth = 5
 
     def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
         super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
@@ -377,9 +380,9 @@ class LinkPredictionPlotter(Formatter):
                 ROC_scores.append(vals[0])
                 PR_scores.append(vals[2])
         if type == "ROC":
-            plt.plot(dims,ROC_scores)
+            plt.plot(dims,ROC_scores, lw = self.linewidth)
         if type == "PR":
-            plt.plot(dims,PR_scores)
+            plt.plot(dims,PR_scores, lw = self.linewidth)
         plt.xticks(range(1,11))
         self.format_plot(title = "{type} AUC score pr latent dimension", subtitle=self.bmname,
                          title_y=self.fig_title_y,xlabel="Nr of latent dimensions",ylabel=f"{type} score")
@@ -394,7 +397,7 @@ class LinkPredictionPlotter(Formatter):
         path = f"/results/D{self.dim}/{type.lower()}_train.txt"
 
         scores = np.loadtxt(self.results_path+path)
-        plt.plot(*scores.T, color = "black")
+        plt.plot(*scores.T, color = "black", lv = self.linewidth)
 
         self.format_plot(title=f"{type} AUC score as a function of epochs", subtitle=self.dataname,
                          title_y=self.fig_title_y, xlabel="Nr of epochs", ylabel=f"{type} score")
@@ -411,8 +414,8 @@ class LinkPredictionPlotter(Formatter):
 
         scores = np.loadtxt(self.results_path + path+f"{type.lower()}_train.txt")
         baseline_scores = np.loadtxt(self.results_path + path + "baseline_accuracy_train.txt")
-        plt.plot(*scores.T, color="black", label = "Link prediction")
-        plt.plot(*baseline_scores.T, color = "green", label = "Baseline model")
+        plt.plot(*scores.T, color="black", label = "Link prediction", lv = self.linewidth)
+        plt.plot(*baseline_scores.T, color = "green", label = "Baseline model", lv = self.linewidth)
         plt.legend()
 
         self.format_plot(title=f"{type} AUC score as a function of epochs", subtitle=self.dataname,
@@ -434,6 +437,7 @@ class LinkPredictionPlotter(Formatter):
 
 #test = LinkPredictionPlotter().ROC_PR_plot(show = True)
 #test = LinkPredictionPlotter().ROC_PR_epoch(show = True)
+
 linkprediction = LinkPredictionPlotter(blockchain,month,mtype,dim)
 linkprediction.ROC_PR_epoch(show = True, type = "PR")
 linkprediction.ROC_PR_epoch(show = True)

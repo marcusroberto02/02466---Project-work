@@ -9,10 +9,6 @@ from sklearn.metrics import confusion_matrix, roc_auc_score, precision_score, re
 from sklearn.model_selection import train_test_split,StratifiedShuffleSplit
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
-import plotly.graph_objs as go
-from plotly import tools
-from plotly.subplots import make_subplots
-import plotly.offline as py
 from collections import Counter
 import os
 import matplotlib
@@ -20,7 +16,7 @@ matplotlib.rcParams.update({'figure.autolayout': True})
 
 class DataFrame:
     # base path for loading embeddings
-    resultsbase = "./results_final"
+    resultsbase = "../results_final"
 
     # base path for storing figures
     figurebase = "C:/Users/marcu/Google Drev/DTU/02466(fagprojekt)/Figurer"
@@ -306,7 +302,31 @@ class LinkPredictionPlotter(Formatter):
         if not os.path.exists(self.store_path):
             os.makedirs(self.store_path)    
 
-    
+
+    def ROC_PR_plot(self, type = "ROC", save = False, show = False):
+        self.fig = plt.figure(figsize=self.figsize)
+        self.format_plot(title="Basic title", subtitle=self.bmname, title_y=self.fig_title_y, xlabel="Basic X-label",
+                         ylabel="Basic Y-label")
+        ROC_scores = []
+        ROC_errorbars = []
+        PR_scores = []
+        PR_errorbars = []
+        dims = range(1,11)
+        for i in dims:
+            with open(self.results_path + f"/results/D{i}/ROC-PR-MA-BA.txt", 'r') as f:
+                roc_mean, roc_std, pr_mean, pr_std = [float(l.strip().split()[-1]) for l in f.readlines()]
+                ROC_scores.append(roc_mean)
+                PR_scores.append(pr_mean)
+        if type == "ROC":
+            plt.plot(dims,ROC_scores)
+        if type == "PR":
+            plt.plot(dims,PR_scores)
+        self.format_plot(title = f"{type} as a function of latent dimensions", subtitle=self.bmname,
+                         title_y=self.fig_title_y,xlabel="Nr of latent dimensions",ylabel=f"{type} score")
+        if save:
+            plt.savefig("{path}/NAVN PÅ PLOT".format(path=self.store_path))
+        if show:
+            plt.show()
     def make_dummy_plot(self,save=False,show=False):
         self.fig = plt.figure(figsize=self.figsize)
         # LAV SELVE PLOTTET HER
@@ -315,3 +335,5 @@ class LinkPredictionPlotter(Formatter):
             plt.savefig("{path}/NAVN PÅ PLOT".format(path=self.store_path))
         if show:
             plt.show()
+
+test = LinkPredictionPlotter().ROC_PR_plot(show = True)

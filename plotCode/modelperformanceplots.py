@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-path = "./results_final/ETH/2021-02"
+path = "../results_final/ETH/2021-02"
 
 specific = "/tri/results/D2"
 

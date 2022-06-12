@@ -291,11 +291,20 @@ class EmbeddingPlotter(Formatter):
     def load_embeddings_bi(self):
         self.z = torch.load("{path}/bi/results/D{dim}/nft_embeddings".format(path=self.path,dim=self.dim)).detach().numpy()
         self.q = torch.load("{path}/bi/results/D{dim}/trader_embeddings".format(path=self.path,dim=self.dim)).detach().numpy()
+    
+    def load_embeddings_tri(self):
+        self.l = torch.load("{path}/tri/results/D{dim}/nft_embeddings".format(path=self.path,dim=self.dim)).detach().numpy()
+        self.r = torch.load("{path}/tri/results/D{dim}/seller_embeddings".format(path=self.path,dim=self.dim)).detach().numpy()
+        self.u = torch.load("{path}/tri/results/D{dim}/buyer_embeddings".format(path=self.path,dim=self.dim)).detach().numpy()
 
-    def make_scatter_plot(self):
+    def make_scatter_plot(self,d1=1,d2=2):
         if self.mtype == "bi":
+            if self.z is None or self.q is None:
+                self.load_embeddings_bi()
+        elif self.mtype == "tri":
+            if self.l is None or self.r is None or self.u is None:
+                self.load_embeddings_tri()
 
-            self.load_embeddings_bi()
 
 
     

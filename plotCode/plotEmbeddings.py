@@ -99,6 +99,7 @@ class embedPlotterTri(embedPlotter):
             ax.scatter(*zip(*self.l3),s=0.1,label="NFTs")
             ax.scatter(*zip(*self.r3),s=0.1,label="Sellers")
             ax.scatter(*zip(*self.u3),s=0.1,label="Buyers")
+            ax.text(0.5, 0.01, "one text and next text", ha="center", fontsize=18, bbox={"facecolor":"orange", "alpha":0.5, "pad":5})
             ax.set_title("Rotation: " + str(i*360/(n_rot*n_rot)),y=-0.01)
             ax.view_init(azim=i*360/(n_rot*n_rot))
 
@@ -126,7 +127,7 @@ class embedPlotterTri(embedPlotter):
         plt.show()
 
         
-path = "../results_final/ETH/2021-02"
+path = "./results_final/ETH/2021-02"
 
 # embed plot structure bi
 epb = embedPlotterBi(path)

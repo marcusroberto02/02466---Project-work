@@ -238,7 +238,7 @@ class classicationPlotter(dataFrame):
 blockchain="ETH"
 month="2021-02"
 mtype="tri"
-dim=3
+dim=2
 
 cp = classicationPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
 cp.print_class_distribution()

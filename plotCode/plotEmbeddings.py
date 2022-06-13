@@ -8,7 +8,7 @@ matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 
 
-colors = {'Games':'red', 'Art':'green', 'Collectible':'blue', 'Metaverse':'orange','Other':'purple','Utility':'brown'}
+colors = {'Games':'red','Art':'green','Collectible':'blue','Metaverse':'orange','Other':'purple','Utility':'brown'}
 
 class embedPlotter:
     def __init__(self, path):
@@ -104,8 +104,8 @@ class embedPlotterTri(embedPlotter):
             ax.view_init(azim=i*360/(n_rot*n_rot))
 
         lines, labels = fig.axes[-1].get_legend_handles_labels()
-        fig.suptitle("Scatter plot 3D - Tripartite model",fontsize=30,weight="bold")
-        fig.legend(lines, labels, loc = 'upper right',markerscale=30,borderpad=2,fontsize=20)
+        #fig.suptitle("Scatter plot 3D - Tripartite model",fontsize=30,weight="bold")
+        #fig.legend(lines, labels, loc = 'upper right',markerscale=30,borderpad=2,fontsize=20)
         plt.show()
     
     def categoryPlot(self):

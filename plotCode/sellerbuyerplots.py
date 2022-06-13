@@ -4,15 +4,15 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
-path = "./data/ETH/2020-10"
+path = "./results_final/ETH/2021-02"
 
 specific = "/tri/results/D2"
 
 seller_biases = torch.load(path + specific + "/seller_biases").detach().numpy()
 buyer_biases = torch.load(path + specific + "/buyer_biases").detach().numpy()
 
-seller_biases = (seller_biases - np.mean(seller_biases)) / np.std(seller_biases)
-buyer_biases = (buyer_biases - np.mean(buyer_biases)) / np.std(buyer_biases)
+#seller_biases = (seller_biases - np.mean(seller_biases)) / np.std(seller_biases)
+#buyer_biases = (buyer_biases - np.mean(buyer_biases)) / np.std(buyer_biases)
 
 df = pd.read_csv(path + "/tri/sellerbuyeridtable.csv")
 sellers = df["ei_seller"]

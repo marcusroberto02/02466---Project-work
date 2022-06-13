@@ -33,23 +33,34 @@ else:
 # Dataset Name
 # for the hpc
 #path = '/zhome/45/e/155478/Desktop/02466---Project-work/data'
-#blockchain = '/ETH'
-#date = '/2020-10'
-#dataset = path + blockchain + date
 
 # for testing on local pc
-dataset = "./data/ETH/2021-02"
+path = "./data"
+
+def get_path(blockchain,month):
+    return f"{path}/{blockchain}/{month}"
+    
+blockchain = "ETH"
 
 # model parameters
-latent_dims = [2]
-total_epochs= 10
-n_test_batches = 5
+latent_dims = [2,3]
+total_epochs= 1
+n_test_batches = 2
 lrs=[0.1]
 # Total independent runs of the model
 total_runs=1
 
+months = ["2020-01","2020-02","2020-03","2020-04","2020-05",
+          "2020-06","2020-07","2020-08","2020-09","2020-10",
+          "2020-11","2020-12","2021-01","2021-03"]
 
-run_ldm_bi(dataset,latent_dims,total_epochs,n_test_batches,lrs,total_runs,device)
-run_ldm_tri(dataset,latent_dims,total_epochs,n_test_batches,lrs,total_runs,device)
+for month in months:
+    dataset = get_path(blockchain,month)
+    run_ldm_bi(dataset=dataset,latent_dims=latent_dims,total_epochs=total_epochs,
+               n_test_batches=n_test_batches,lrs=lrs,
+               total_runs=total_runs,device=device)
+    run_ldm_tri(dataset=dataset,latent_dims=latent_dims,total_epochs=total_epochs,
+               n_test_batches=n_test_batches,lrs=lrs,
+               total_runs=total_runs,device=device)
 
  

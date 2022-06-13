@@ -1,4 +1,5 @@
 from logging import raiseExceptions
+from cvxopt import normal
 import pandas as pd
 from sympy import block_collapse
 import torch
@@ -15,6 +16,7 @@ from collections import Counter,defaultdict
 import os
 import matplotlib
 import platform
+import seaborn as sns
 
 matplotlib.rcParams.update({'figure.autolayout': True})
 
@@ -907,17 +909,17 @@ class LinkPredictionPlotter(Formatter):
 blockchain="ETH"
 month="2021-02"
 mtypes=["bi","tri"]
-dims=[2]
+dims=[2,3]
 
-#for mtype in mtypes:
-    #for dim in dims:
-        #lpp = LinkPredictionPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+for mtype in mtypes:
+    for dim in dims:
+        lpp = LinkPredictionPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
         #lpp.make_score_dim_plot(save=True)
         #lpp.make_score_epoch_plot(stype="max_accuracy",save=True)
         #lpp.make_score_epoch_all_plot(stype="ROC",save=True)
         #lpp.make_score_epoch_all_plot(stype="max_accuracy",save=True)
         #lpp.make_baseline_comparison_plot(save=True)
-        #lpp.make_score_month_plot(show=True)
+        lpp.make_score_month_plot(save=True)
 
 
 ###################
@@ -929,12 +931,16 @@ class TraderStoryPlotter(Formatter):
     figsize = (20,20)
 
     # y position of title and subtitle
-    fig_title_y = (0.95,0.90)
+    fig_title_y = (0.96,0.91)
 
     # standard linewidth
     linewidth = 5
 
-    def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
+    # empty variables for bias terms
+    seller_biases = None
+    buyer_biases = None
+
+    def __init__(self,blockchain="ETH",month="2021-02",mtype="tri",dim=2):
         self.initialize_fontsizes_big()
         super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
         self.store_path += "/TraderStories"
@@ -942,3 +948,112 @@ class TraderStoryPlotter(Formatter):
             os.makedirs(self.store_path)
 
     
+    def load_biases(self):
+        self.seller_biases = torch.load("{path}/results/D{dim}/seller_biases".format(path=self.results_path,dim=self.dim)).detach().numpy()
+        self.buyer_biases = torch.load("{path}/results/D{dim}/buyer_biases".format(path=self.results_path,dim=self.dim)).detach().numpy()
+
+    # code from the documentation of matplotlib
+    # https://matplotlib.org/stable/gallery/lines_bars_and_markers/scatter_hist.html
+    def scatter_hist(self,x, y, ax, ax_histx, ax_histy,normalize=False):
+        # no labels
+        ax_histx.tick_params(axis="x", labelbottom=False)
+        ax_histy.tick_params(axis="y", labelleft=False)
+
+        # Set bottom and left spines as x and y axes of coordinate system
+        ax.spines['bottom'].set_position('zero')
+        ax.spines['left'].set_position('zero')
+
+        # Remove top and right spines
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+        # the scatter plot:
+        ax.scatter(x, y)
+
+
+        # OBS 
+        # HER SKAL MAN MANUELT UNDERSØGE HVILKE INDEKSER DER FJERNER 0'erne
+        if normalize:
+            ax.set_xticks(range(-4,5),range(-4,5))
+            ax.set_yticks(range(-4,5),range(-4,5))
+        idx,idy = (4,4) if normalize else (3,3)
+        xticks = ax.xaxis.get_ticklabels()
+        xticks[idx].set_visible(False)
+        yticks = ax.yaxis.get_ticklabels()
+        yticks[idy].set_visible(False)
+
+        # Create 'x' and 'y' labels placed at the end of the axes
+        ax.set_xlabel(r'$\nu$', size=28, labelpad=-24)
+        ax.set_ylabel(r'$\tau$', size=28, labelpad=-21,rotation=0)
+
+        ax.xaxis.set_label_coords(0.99, 0.55)
+        ax.yaxis.set_label_coords(0.52, 0.97)
+
+        # Draw arrows
+        arrow_fmt = dict(markersize=4, color='black', clip_on=False)
+        ax.plot((1), (0), marker='>', transform=ax.get_yaxis_transform(), **arrow_fmt)
+        ax.plot((0), (1), marker='^', transform=ax.get_xaxis_transform(), **arrow_fmt)
+
+        
+
+        # now determine nice limits by hand:
+        binwidth = 0.25
+        xymax = max(np.max(np.abs(x)), np.max(np.abs(y)))
+        lim = (int(xymax/binwidth) + 1) * binwidth
+
+        bins = np.arange(-lim, lim + binwidth, binwidth)
+        ax_histx.hist(x, bins=bins)
+        ax_histy.hist(y, bins=bins, orientation='horizontal')
+
+    def make_bias_distribution_plot(self,normalize=False,save=False,show=False):
+        if self.seller_biases is None or self.buyer_biases is None:
+            self.load_biases()
+        
+        # only include traders that act as both sellers and buyers
+        df = pd.read_csv(self.results_path + "/sellerbuyeridtable.csv")
+        seller_ids = df["ei_seller"]
+        buyer_ids = df['ei_buyer']
+
+        self.fig = plt.figure(figsize=self.figsize)
+
+        gs = self.fig.add_gridspec(2, 2,  width_ratios=(7, 2), height_ratios=(2, 7),
+                      left=0.1, right=0.9, bottom=0.1, top=0.9,
+                      wspace=0.05, hspace=0.05)
+
+
+        ax = self.fig.add_subplot(gs[1, 0])
+        ax_histx = self.fig.add_subplot(gs[0, 0], sharex=ax)
+        ax_histy = self.fig.add_subplot(gs[1, 1], sharey=ax)
+
+        # make the scatterplot
+        sb = self.seller_biases[seller_ids]
+        bb = self.buyer_biases[buyer_ids]
+        if normalize:
+            sb = (sb - np.mean(sb)) / np.std(sb)
+            bb = (bb - np.mean(bb)) / np.std(bb)
+        self.scatter_hist(sb,bb, ax, ax_histx, ax_histy,normalize=normalize)
+        title = "Seller and buyer biases distribution"
+        title += " - Normalized" if normalize else ""
+        self.set_titles_3D(title=title,subtitle=self.dataname,title_y=self.fig_title_y)
+        
+        if save:
+            if normalize:
+                plt.savefig("{path}/bias_distribution_plot_normalized_{mtype}_D{dim:d}".format(path=self.store_path,mtype=self.mtype,dim=self.dim))
+            else:
+                plt.savefig("{path}/bias_distribution_plot_{mtype}_D{dim:d}".format(path=self.store_path,mtype=self.mtype,dim=self.dim))
+        if show:
+            plt.show()
+        
+        
+
+
+# choose data set to investigate
+blockchain="ETH"
+month="2021-02"
+mtype="tri"
+dims=[2,3]
+
+#for dim in dims:
+#    tsp = TraderStoryPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+#    tsp.make_bias_distribution_plot(save=True)
+#    tsp.make_bias_distribution_plot(normalize=True,save=True)

@@ -1,0 +1,5 @@
+Number of unique NFTs: 3561
+Number of unique sellers: 2020
+Number of unique buyers: 2300
+Number of unique trades: 4621
+Number of unique categories: 5

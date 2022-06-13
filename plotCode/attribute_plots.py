@@ -1,71 +1,112 @@
+from plot_formatting import Formatter
 import pandas as pd
 import numpy as np
-from pandas.api.types import CategoricalDtype
 import matplotlib.pyplot as plt
 import datetime
+import os
+import platform
 
-def plot_trade_per_category(df, start_date, end_date):
-    df['Datetime_updated'] = pd.to_datetime(df['Datetime_updated'], format='%Y-%m-%d')
-    lower_limit = df['Datetime_updated'] >= start_date
-    upper_limit = df['Datetime_updated'] <= end_date
-    df = df.loc[lower_limit]
-    df = df.loc[upper_limit]
-    df = df.reset_index(drop=True)
-    df['Datetime_updated'] = df['Datetime_updated'].dt.to_period('M')
-    data = df.groupby(['Datetime_updated','Category']).size().unstack(fill_value=0).stack()
-    x = data.index.get_level_values('Datetime_updated').unique()
-    x = x.astype(str)
-    y1 = data.loc[(data.index.get_level_values('Category') == 'Art')].values
-    y2 = data.loc[(data.index.get_level_values('Category') == 'Collectible')].values
-    y3 = data.loc[(data.index.get_level_values('Category') == 'Games')].values
-    y4 = data.loc[(data.index.get_level_values('Category') == 'Metaverse')].values
-    y5 = data.loc[(data.index.get_level_values('Category') == 'Other')].values
-    y6 = data.loc[(data.index.get_level_values('Category') == 'Utility')].values
-    plt.plot(x, y1, label = 'Art')
-    plt.plot(x, y2, label = 'Collectible')
-    plt.plot(x, y3, label = 'Games')
-    plt.plot(x, y4, label = 'Metaverse')
-    plt.plot(x, y5, label = 'Other')
-    plt.plot(x, y6, label = 'Utility')
-    plt.legend()
-    plt.title('trades per category for each month')
-    plt.xlabel('Month')
-    plt.ylabel('trades')
-    plt.xticks(rotation='vertical')
-    plt.yscale('log')
-    plt.ylim(1e0)
-    plt.show()
+###################
+# ATTRIBUTE PLOTS #
+###################
+
+class AttributePlotter(Formatter):
+    # standard size
+    figsize = (20,20)
+
+    # y position of title and subtitle
+    fig_title_y = (0.95,0.90) 
+
+    # standard line width
+    linewidth = 5
+
+    # color for embeddings
+    colors = {'Games':'red','Art':'green','Collectible':'blue','Metaverse':'orange','Other':'purple','Utility':'brown'}
+    
+    # name for the dataset
+    namedict = {"API":"Full dataset","ETH":"Ethereum blockchain","WAX":"WAX blockchain"}
+
+    def __init__(self,dname="API",month="2021-02"):
+        self.initialize_fontsizes_big()
+        super().__init__(month=month)
+        self.dname = dname
+        self.load_data()
+        self.store_path = self.figurebase + "/AttributePlots"
+        if not os.path.exists(self.store_path):
+            os.makedirs(self.store_path)    
+
+    def load_data(self):
+        ndots = "." if platform.system() != "Darwin" else ".."
+        path = "{ndots}/data/Data_{dname}.csv".format(ndots=ndots,dname=self.dname)
+        self.df = pd.read_csv(path, low_memory=True)
+
+    def plot_trades_per_category(self,start_date=datetime.datetime(2017,11,1),end_date=datetime.datetime(2021,4,30),save=False,show=False):
+        self.df['Datetime_updated'] = pd.to_datetime(self.df['Datetime_updated'], format='%Y-%m-%d')
+        lower_limit = self.df['Datetime_updated'] >= start_date
+        upper_limit = self.df['Datetime_updated'] <= end_date
+        self.df = self.df.loc[lower_limit]
+        self.df = self.df.loc[upper_limit]
+        self.df = self.df.reset_index(drop=True)
+        self.df['Datetime_updated'] = self.df['Datetime_updated'].dt.to_period('M')
+        data = self.df.groupby(['Datetime_updated','Category']).size().unstack(fill_value=0).stack()
+        x = data.index.get_level_values('Datetime_updated').unique()
+        x = x.astype(str)
+
+        self.fig = plt.figure(figsize=self.figsize)
+
+        for category, color in self.colors.items():
+            y = data.loc[(data.index.get_level_values('Category') == category)].values
+            # remove zeros from plot
+            y = y.astype(float)
+            y[y<=0] = np.nan
+            plt.plot(x, y, color=color,label = category,linewidth=self.linewidth)
+        
+        plt.legend(loc="lower right")
+        subtitle = self.namedict[self.dname]
+        self.format_plot(title="Number of trades pr. month",subtitle=subtitle,title_y=self.fig_title_y,xlabel="Month",ylabel="Number of trades")
+
+        ax = plt.gca()
+        n = 5
+        [l.set_visible(False) for (i,l) in enumerate(ax.xaxis.get_ticklabels()) if ((i-1) % n != 0 and i != 0) or (i == 1)]
+        
+
+        plt.xticks(rotation="vertical")
+        plt.yscale('log')
+        plt.ylim(1e0)
+        
+        if save:
+            plt.savefig("{path}/trades_per_category_plot_{dname}".format(path=self.store_path,dname=self.dname))
+        if show:
+            plt.show()
+            
 
 
-def category_analysis(df, start_date, end_date):
-    df['Datetime_updated'] = pd.to_datetime(df['Datetime_updated'], format='%Y-%m-%d')
-    lower_limit = df['Datetime_updated'] >= start_date
-    upper_limit = df['Datetime_updated'] <= end_date
-    df = df.loc[lower_limit]
-    df = df.loc[upper_limit]
-    df = df.reset_index(drop=True)
-    df_buyers = df.copy()
-    df_buyers["Seller_address"] = df_buyers["Buyer_address"]
-    df = pd.concat([df, df_buyers])
-    df = df.rename(columns = {'Seller_address':'Trader_address'})
-    data = df.groupby(['Trader_address', 'Category']).size()
-    data = data.groupby(['Trader_address']).size()
+    def category_analysis(self,df, start_date, end_date):
+        self.df['Datetime_updated'] = pd.to_datetime(self.df['Datetime_updated'], format='%Y-%m-%d')
+        lower_limit = self.df['Datetime_updated'] >= start_date
+        upper_limit = self.df['Datetime_updated'] <= end_date
+        self.df = self.df.loc[lower_limit]
+        self.df = self.df.loc[upper_limit]
+        self.df = self.df.reset_index(drop=True)
+        df_buyers = self.df.copy()
+        df_buyers["Seller_address"] = df_buyers["Buyer_address"]
+        self.df = pd.concat([self.df, df_buyers])
+        self.df = self.df.rename(columns = {'Seller_address':'Trader_address'})
+        data = self.df.groupby(['Trader_address', 'Category']).size()
+        data = data.groupby(['Trader_address']).size()
 
-    total = len(data)
-    percentages = [sum(data==i)/total for i in range(1,7)]  
-    percentages = [round(num,3)*100 for num in percentages]
-    counts = [sum(data==i) for i in range(1,7)]
+        total = len(data)
+        percentages = [sum(data==i)/total for i in range(1,7)]  
+        percentages = [round(num,3)*100 for num in percentages]
+        counts = [sum(data==i) for i in range(1,7)]
 
-    print(percentages)
-    print(counts)
+        print(percentages)
+        print(counts)
 
 
-path = "C:/Users/khelp/OneDrive/Desktop/DTU/4. semester/Fagprojekt/"
-name = "Data_API.csv"
-df = pd.read_csv(path + name, low_memory=True)
+# choose dataset you are interested to investigate
+data = "ETH"
 
-start_date = datetime.datetime(2017,11,1)
-end_date = datetime.datetime(2021,4,30)
-
-plot_trade_per_category(df, start_date, end_date)
-category_analysis(df,start_date,end_date)
+ap = AttributePlotter(dname=data)
+ap.plot_trades_per_category(save=True)
+#category_analysis(df,start_date,end_date)

@@ -49,7 +49,7 @@ class LinkPredictionPlotter(Formatter):
         ylabel = f"{stype}-AUC score" if stype != "max_accuracy" else "Accuracy"
 
         self.format_plot(title=title, subtitle=self.dataname,
-                         title_y=self.fig_title_y, xlabel="Nr of epochs", ylabel=ylabel)
+                         title_y=self.fig_title_y, xlabel="Nr. of epochs", ylabel=ylabel)
         if save:
             plt.savefig("{path}/{stype}_epoch_plot_{mtype}_D{dim:d}".format(path=self.store_path,stype=stype,mtype=self.mtype,dim=self.dim))
         if show:
@@ -58,8 +58,8 @@ class LinkPredictionPlotter(Formatter):
     def make_score_epoch_all_plot(self,stype = "ROC",save = False, show = False):
         self.fig = plt.figure(figsize = self.figsize)
 
-        dims = [1,2,5,8,10]
-        colors = ["blue","red","green","orange","purple"]
+        dims = [1,2,3,5,8,10]
+        colors = ["blue","red","green","orange","purple","brown"]
         for dim, color in zip(dims,colors):
             path = f"/results/D{dim}/{stype.lower()}_train.txt"
 
@@ -73,7 +73,7 @@ class LinkPredictionPlotter(Formatter):
 
         plt.legend(loc="lower right")
         self.format_plot(title=title, subtitle=self.bmmname,
-                         title_y=self.fig_title_y, xlabel="Nr of epochs", ylabel=ylabel)
+                         title_y=self.fig_title_y, xlabel="Nr. of epochs", ylabel=ylabel)
         if save:
             plt.savefig("{path}/{stype}_epoch_plot_all_{mtype}".format(path=self.store_path,stype=stype,mtype=self.mtype,dim=self.dim))
         if show:
@@ -115,7 +115,7 @@ class LinkPredictionPlotter(Formatter):
 
         plt.ylim([0,1])
 
-        title = f"{stype}-AUC score as a function of epochs" if stype != "max_accuracy" else f"Maximum accuracy as a function of epochs"
+        title = f"{stype}-AUC score as a function of dimension D" if stype != "max_accuracy" else f"Maximum accuracy as a function of epochs"
         ylabel = f"{stype}-AUC score" if stype != "max_accuracy" else "Accuracy"
 
         self.format_plot(title=title.format(stype=stype), subtitle=self.bmmname,
@@ -177,7 +177,7 @@ class LinkPredictionPlotter(Formatter):
         plt.legend(loc="lower right")
 
         self.format_plot(title=f"Comparison in performance with baseline", subtitle=self.dataname,
-                         title_y=self.fig_title_y, xlabel="Nr of epochs", ylabel="Accuracy")
+                         title_y=self.fig_title_y, xlabel="Nr. of epochs", ylabel="Accuracy")
         if save:
             plt.savefig("{path}/{stype}_baseline_plot_{mtype}_D{dim:d}".format(path=self.store_path, stype=stype,mtype=self.mtype,dim=self.dim))
         if show:
@@ -200,7 +200,7 @@ for mtype in mtypes:
         #lpp.make_score_epoch_plot(stype="ROC",save=True)
         #lpp.make_score_epoch_plot(stype="max_accuracy",save=True)
         #lpp.make_score_epoch_all_plot(stype="ROC",save=True)
-        #lpp.make_score_epoch_all_plot(stype="max_accuracy",save=True)
-        lpp.make_baseline_comparison_plot(save=True)
+        lpp.make_score_epoch_all_plot(stype="max_accuracy",save=True)
+        #lpp.make_baseline_comparison_plot(save=True)
         #lpp.make_score_month_plot(save=True)
-        #lpp.make_score_month_plot(save=True)
+        

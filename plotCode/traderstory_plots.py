@@ -316,9 +316,9 @@ class TraderStoryPlotter(Formatter):
         plt.scatter(self.l[bought_nfts][:,d1-1],self.l[bought_nfts][:,d2-1], s = self.s_small, color = "red", label = "Bought NFTs")
 
         # plot the seller
-        plt.scatter(self.r[idx_seller,d1-1],self.r[idx_seller,d2-1], marker = "o",s = self.s_big, color = "purple", label = "Seller location")
+        plt.scatter(self.r[idx_seller,d1-1],self.r[idx_seller,d2-1], marker = "X",edgecolor="black",s = self.s_big, color = "purple", label = "Seller location")
         # plot the buyer
-        plt.scatter(self.u[idx_buyer,d1-1],self.u[idx_buyer,d2-1], marker="o",s=self.s_big, color = "blue", label = "Buyer location")
+        plt.scatter(self.u[idx_buyer,d1-1],self.u[idx_buyer,d2-1], marker="X",edgecolor="black",s=self.s_big, color = "blue", label = "Buyer location")
         legend = plt.legend(loc="upper right")
         for handle in legend.legendHandles:
             handle.set_sizes([self.legend_symbolsize])
@@ -344,18 +344,18 @@ class TraderStoryPlotter(Formatter):
 blockchain="ETH"
 month="2021-02"
 mtype="tri"
-dims=[2,3]
+dims=[2]
 
 for dim in dims:
     tsp = TraderStoryPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
     #tsp.make_bias_distribution_plot(remove_origin=(3,3),save=True)
     #tsp.make_bias_distribution_plot(normalize=True,remove_origin=(3,3),save=True)
-    tsp.make_only_sellers_bias_distribution_plot(save=True)
-    tsp.make_only_buyers_bias_distribution_plot(save=True)
-    tsp.make_distance_distribution_plot(save=True)
-    #tsp.make_trader_story_plot_2D(save=True)
-    #tsp.make_trader_story_plot_2D(story="most_frequent_seller",save=True)
-    #tsp.make_trader_story_plot_2D(story="most_frequent_buyer",save=True)
-    #tsp.make_trader_story_plot_2D(story="most_active_trader",save=True)
-    #tsp.make_trader_story_plot_2D(story="custom_trader",min_sales=100,min_purchases=100,save=True)
+    #tsp.make_only_sellers_bias_distribution_plot(save=True)
+    #tsp.make_only_buyers_bias_distribution_plot(save=True)
+    #tsp.make_distance_distribution_plot(save=True)
+    tsp.make_trader_story_plot_2D(save=True)
+    tsp.make_trader_story_plot_2D(story="most_frequent_seller",save=True)
+    tsp.make_trader_story_plot_2D(story="most_frequent_buyer",save=True)
+    tsp.make_trader_story_plot_2D(story="most_active_trader",save=True)
+    tsp.make_trader_story_plot_2D(story="custom_trader",min_sales=100,min_purchases=100,save=True)
     

@@ -5,6 +5,10 @@ import numpy as np
 import sklearn.linear_model as lm
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+from sklearn.model_selection import train_test_split
+from collections import Counter
+import torch
 
 #######################
 # NODE CLASSIFICATION #
@@ -26,6 +30,9 @@ class ClassicationPlotter(Formatter):
     # standard line width
     linewidth = 5
 
+    # standard markersize
+    markersize = 15
+
     # empty model variables
     logreg = None
     knn = None
@@ -33,9 +40,35 @@ class ClassicationPlotter(Formatter):
     def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
         self.initialize_fontsizes_big()
         super().__init__(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+        self.preprocess_data()
         self.store_path += "/Classification"
         if not os.path.exists(self.store_path):
-            os.makedirs(self.store_path)     
+            os.makedirs(self.store_path)
+
+    def preprocess_data(self):
+        #load nft embeddings as array in X and categories in y
+        self.X = torch.load(self.results_path + "/results/D" + str(self.dim) + "/nft_embeddings").detach().numpy()
+        self.y = np.loadtxt(self.results_path + "/sparse_c.txt",dtype="str").reshape(-1,1)
+
+        # split data into train and test
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X,self.y,test_size=0.2,stratify=self.y,random_state=42)
+
+        # encode y
+        self.encoder = LabelEncoder()
+        self.y_train = self.encoder.fit_transform(self.y_train.ravel())
+        self.y_test = self.encoder.fit_transform(self.y_test.ravel())
+    
+    def print_class_distribution(self):
+        class_counts = Counter(self.y.ravel())
+        print("\nDistribution of classes in {blockchain}-{month} data set:\n".format(blockchain=self.blockchain,month=self.month))
+        for name,count in sorted(class_counts.items(), key=lambda x: x[1], reverse=True):
+            percentage = count / len(self.y) * 100
+            print("{name}: {count} appearances --> {p:0.2f}%".format(name=name,count=count,p=percentage))
+
+    def print_encoding_labels(self):
+        print("\nEncoding for classes in {blockchain}-{month} data set:\n".format(blockchain=self.blockchain,month=self.month))
+        for i, cname in enumerate(self.encoder.classes_):
+            print("{name} --> {eid}".format(name=cname,eid=i))
 
     def make_barplot(self,data,title="Barplot"):
         self.fig = plt.figure(figsize=self.barplot_figsize)
@@ -75,6 +108,47 @@ class ClassicationPlotter(Formatter):
         
         print("\nMultinomial logistic regression results for the {blockchain}-{month} data set:\n".format(blockchain=self.blockchain,month=self.month))
         self.print_model_results(self.logreg,"Multinomial Logistic Regression")
+    
+    def make_model_dim_plot(self,modeltype="multinomial",solver='lbfgs',k=5,save=False,show=False):
+        self.fig = plt.figure(figsize=self.barplot_figsize)
+
+        dims = range(1,11)
+        scores = []
+
+        for dim in dims:
+            #load nft embeddings as array in X and categories in y
+            X = torch.load(self.results_path + "/results/D" + str(dim) + "/nft_embeddings").detach().numpy()
+            y = np.loadtxt(self.results_path + "/sparse_c.txt",dtype="str").reshape(-1,1)
+
+            # split data into train and test
+            X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,stratify=y,random_state=42)
+
+            # encode y
+            encoder = LabelEncoder()
+            y_train = encoder.fit_transform(y_train.ravel())
+            y_test = encoder.fit_transform(y_test.ravel())
+
+            model = lm.LogisticRegression(solver=solver, multi_class='multinomial', max_iter=1000, random_state=42)
+            if modeltype == "KNN":
+                model = KNeighborsClassifier(n_neighbors=k)
+            model.fit(X_train,y_train)
+
+            scores.append(model.score(X_test, y_test))
+
+        plt.plot(dims,scores,marker='o',mfc='red',markersize=self.markersize,lw = self.linewidth)
+        plt.xticks(dims,dims)
+        plt.ylim([0,1])
+        
+        title = "Multinomial logistic regression results"
+        if modeltype == "KNN":
+            title = f"K-nearest neighbors results with K={k}"
+
+        self.format_plot(title=title, subtitle=self.bmmname,
+                         title_y=self.barplot_title_y,xlabel="Nr. of latent dimensions",ylabel="Accuracy")
+        if save:
+            plt.savefig("{path}/{modeltype}_dim_plot_{mtype}".format(path=self.store_path,modeltype=modeltype,mtype=self.mtype))
+        if show:
+            plt.show()
 
     def train_k_nearest_neighbors(self,k=5):
         self.knn = KNeighborsClassifier(n_neighbors=k)
@@ -93,7 +167,7 @@ class ClassicationPlotter(Formatter):
         
         if save or show:
             self.fig = plt.figure(figsize=self.barplot_figsize)
-            plt.plot(n_neighbors,knn_scores,linewidth=self.linewidth)
+            plt.plot(n_neighbors,knn_scores,marker='o',mfc='red',markersize=self.markersize,linewidth=self.linewidth)
             self.format_plot(title="K-nearest neighbors performance plot",subtitle=self.dataname,title_y=self.barplot_title_y,xlabel="Number of neighbors",ylabel="Accuracy")
         
         if save:
@@ -162,16 +236,27 @@ class ClassicationPlotter(Formatter):
 # choose data set to investigate
 blockchain="ETH"
 month="2021-02"
-mtype="tri"
-dim=1
+mtypes=["bi","tri"]
+dims=[2]
 
-cp = ClassicationPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
-#cp.print_class_distribution()
-#cp.print_encoding_labels()
-#cp.make_barplot_train(save=True)
-#cp.make_barplot_test(save=True)
-#cp.make_confusion_matrix("multinomial",save=True)
-#cp.make_confusion_matrix("KNN",save=True)
-#cp.make_confusion_matrix("Optimal KNN",save=True)
-#cp.train_optimal_k_nearest_neighbors(save=True)
-#cp.print_baseline_model_performance()
+for mtype in mtypes:
+    for dim in dims:
+        #print(mtype,dim)
+        cp = ClassicationPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+        #cp.print_class_distribution()
+        #cp.print_encoding_labels()
+        #logreg = lm.LogisticRegression(solver='lbfgs', multi_class='multinomial', max_iter=1000, random_state=42)
+        #logreg.fit(cp.X_train,cp.y_train)
+        #print("Multinomial:",logreg.score(cp.X_test,cp.y_test))
+        #knn = KNeighborsClassifier(n_neighbors=10)
+        #knn.fit(cp.X_train,cp.y_train)
+        #print("KNN:",knn.score(cp.X_test,cp.y_test))
+        #cp.make_barplot_train(save=True)
+        #cp.make_barplot_test(save=True)
+        #cp.make_model_dim_plot(modeltype="multinomial",save=True)
+        #cp.make_model_dim_plot(modeltype="KNN",k=10,save=True)
+        cp.make_confusion_matrix("multinomial",save=True)
+        cp.make_confusion_matrix("KNN",k=10,save=True)
+        #cp.make_confusion_matrix("Optimal KNN",save=True)
+        #cp.train_optimal_k_nearest_neighbors(save=True)
+        #cp.print_baseline_model_performance()

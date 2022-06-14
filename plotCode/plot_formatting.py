@@ -35,7 +35,6 @@ class DataFrame:
         self.mtype = mtype
         self.dim = dim
         self.setup_paths()
-        self.preprocess_data()
     
     def setup_paths(self):
         # path for loading results
@@ -44,30 +43,7 @@ class DataFrame:
         # path for storing plots
         self.store_path = self.figurebase + "/" + self.blockchain + "/" + self.month
 
-    def preprocess_data(self):
-        #load nft embeddings as array in X and categories in y
-        self.X = torch.load(self.results_path + "/results/D" + str(self.dim) + "/nft_embeddings").detach().numpy()
-        self.y = np.loadtxt(self.results_path + "/sparse_c.txt",dtype="str").reshape(-1,1)
-
-        # split data into train and test
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X,self.y,test_size=0.2,stratify=self.y,random_state=42)
-
-        # encode y
-        self.encoder = LabelEncoder()
-        self.y_train = self.encoder.fit_transform(self.y_train.ravel())
-        self.y_test = self.encoder.fit_transform(self.y_test.ravel())
     
-    def print_class_distribution(self):
-        class_counts = Counter(self.y.ravel())
-        print("\nDistribution of classes in {blockchain}-{month} data set:\n".format(blockchain=self.blockchain,month=self.month))
-        for name,count in sorted(class_counts.items(), key=lambda x: x[1], reverse=True):
-            percentage = count / len(self.y) * 100
-            print("{name}: {count} appearances --> {p:0.2f}%".format(name=name,count=count,p=percentage))
-
-    def print_encoding_labels(self):
-        print("\nEncoding for classes in {blockchain}-{month} data set:\n".format(blockchain=self.blockchain,month=self.month))
-        for i, cname in enumerate(self.encoder.classes_):
-            print("{name} --> {eid}".format(name=cname,eid=i))
     
 class Formatter(DataFrame):
     def __init__(self, blockchain="ETH", month="2021-02", mtype="bi", dim=2):

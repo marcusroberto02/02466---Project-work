@@ -169,7 +169,7 @@ class TraderStoryPlotter(Formatter):
         xmin, xmax = plt.xlim()
         x = np.linspace(xmin, xmax, 100)
         p = norm.pdf(x, mu, std)
-        plt.plot(x, p, 'k', linewidth=4)
+        plt.plot(x, p, 'k', linewidth=self.linewidth)
 
         self.format_plot(title="Distribution of seller biases for non-buyers", subtitle=self.dataname,
                          title_y=self.fig_title_y, xlabel="Seller bias value", ylabel="Probability")
@@ -199,7 +199,7 @@ class TraderStoryPlotter(Formatter):
         xmin, xmax = plt.xlim()
         x = np.linspace(xmin, xmax, 100)
         p = norm.pdf(x, mu, std)
-        plt.plot(x, p, 'k', linewidth = 4)
+        plt.plot(x, p, 'k', linewidth = self.linewidth)
 
         self.format_plot(title="Distribution of buyer biases for non-sellers", subtitle=self.dataname,
                          title_y=self.fig_title_y, xlabel="Buyer bias value", ylabel="Probability")
@@ -235,7 +235,7 @@ class TraderStoryPlotter(Formatter):
         xmin, xmax = plt.xlim()
         x = np.linspace(xmin, xmax, 100)
         p = lognorm.pdf(x, shape, loc, scale)
-        plt.plot(x, p, 'k', linewidth=4)
+        plt.plot(x, p, 'k', linewidth=self.linewidth)
 
         self.format_plot(title="Distribution of distances between seller and buyer", subtitle=self.dataname,
                          title_y=self.fig_title_y, xlabel="Distance between seller and buyer location", ylabel="Probability")

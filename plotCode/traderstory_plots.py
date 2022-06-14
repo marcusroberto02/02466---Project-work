@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from collections import Counter, defaultdict
-
+from scipy.stats  import norm, lognorm
 
 ###################
 # TRADER STORIES  #
@@ -165,6 +165,11 @@ class TraderStoryPlotter(Formatter):
         sb = self.seller_biases[seller_ids]
 
         plt.hist(sb,bins=200,density=True)
+        mu, std = norm.fit(sb)
+        xmin, xmax = plt.xlim()
+        x = np.linspace(xmin, xmax, 100)
+        p = norm.pdf(x, mu, std)
+        plt.plot(x, p, 'k', linewidth=4)
 
         self.format_plot(title="Distribution of seller biases for non-buyers", subtitle=self.dataname,
                          title_y=self.fig_title_y, xlabel="Seller bias value", ylabel="Probability")
@@ -188,6 +193,13 @@ class TraderStoryPlotter(Formatter):
         bb = self.buyer_biases[buyer_ids]
 
         plt.hist(bb,bins=200,density=True)
+
+        #PDF
+        mu, std = norm.fit(bb)
+        xmin, xmax = plt.xlim()
+        x = np.linspace(xmin, xmax, 100)
+        p = norm.pdf(x, mu, std)
+        plt.plot(x, p, 'k', linewidth = 4)
 
         self.format_plot(title="Distribution of buyer biases for non-sellers", subtitle=self.dataname,
                          title_y=self.fig_title_y, xlabel="Buyer bias value", ylabel="Probability")
@@ -217,6 +229,13 @@ class TraderStoryPlotter(Formatter):
         distances = [np.linalg.norm(s-b) for (s,b) in zip(se,be)]
 
         plt.hist(distances,bins=200,density=True)
+
+        # PDF
+        shape, loc, scale = lognorm.fit(distances)
+        xmin, xmax = plt.xlim()
+        x = np.linspace(xmin, xmax, 100)
+        p = lognorm.pdf(x, shape, loc, scale)
+        plt.plot(x, p, 'k', linewidth=4)
 
         self.format_plot(title="Distribution of distances between seller and buyer", subtitle=self.dataname,
                          title_y=self.fig_title_y, xlabel="Distance between seller and buyer location", ylabel="Probability")
@@ -325,18 +344,18 @@ class TraderStoryPlotter(Formatter):
 blockchain="ETH"
 month="2021-02"
 mtype="tri"
-dims=[2]
+dims=[2,3]
 
 for dim in dims:
     tsp = TraderStoryPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
     #tsp.make_bias_distribution_plot(remove_origin=(3,3),save=True)
     #tsp.make_bias_distribution_plot(normalize=True,remove_origin=(3,3),save=True)
-    #tsp.make_only_sellers_bias_distribution_plot(save=True)
-    #tsp.make_only_buyers_bias_distribution_plot(save=True)
-    #tsp.make_distance_distribution_plot(save=True)
-    tsp.make_trader_story_plot_2D(save=True)
-    tsp.make_trader_story_plot_2D(story="most_frequent_seller",save=True)
-    tsp.make_trader_story_plot_2D(story="most_frequent_buyer",save=True)
-    tsp.make_trader_story_plot_2D(story="most_active_trader",save=True)
-    tsp.make_trader_story_plot_2D(story="custom_trader",min_sales=100,min_purchases=100,save=True)
+    tsp.make_only_sellers_bias_distribution_plot(save=True)
+    tsp.make_only_buyers_bias_distribution_plot(save=True)
+    tsp.make_distance_distribution_plot(save=True)
+    #tsp.make_trader_story_plot_2D(save=True)
+    #tsp.make_trader_story_plot_2D(story="most_frequent_seller",save=True)
+    #tsp.make_trader_story_plot_2D(story="most_frequent_buyer",save=True)
+    #tsp.make_trader_story_plot_2D(story="most_active_trader",save=True)
+    #tsp.make_trader_story_plot_2D(story="custom_trader",min_sales=100,min_purchases=100,save=True)
     

@@ -20,11 +20,14 @@ import seaborn as sns
 
 class DataFrame:
     # base path for loading embeddings
-    ndots = "." if platform.system() != "Darwin" else ".."
+    if platform.system() == "Linux" or platform.system() == "Darwin":
+        ndots = ".."
+    else:
+        ndots = "."
     resultsbase = "{dots}/results_final".format(dots=ndots)
 
     # base path for storing figures
-    figurebase = "C:/Users/marcu/Google Drev/DTU/02466(fagprojekt)/Figurer"
+    figurebase = "../Figurer"
 
     def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
         self.blockchain = blockchain

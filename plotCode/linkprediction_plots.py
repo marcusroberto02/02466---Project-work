@@ -43,6 +43,8 @@ class LinkPredictionPlotter(Formatter):
         scores = np.loadtxt(self.results_path+path)
         plt.plot(*scores.T, color = "blue", lw = self.linewidth)
 
+        plt.ylim([0,1])
+
         title = f"{stype}-AUC score as a function of epochs" if stype != "max_accuracy" else f"Maximum accuracy as a function of epochs"
         ylabel = f"{stype}-AUC score" if stype != "max_accuracy" else "Accuracy"
 
@@ -64,6 +66,8 @@ class LinkPredictionPlotter(Formatter):
             scores = np.loadtxt(self.results_path+path)
             plt.plot(*scores.T, color = color, lw = self.linewidth,label=f"Dim: {dim}")
 
+        plt.ylim([0,1])
+
         title = f"{stype}-AUC score as a function of epochs" if stype != "max_accuracy" else f"Maximum accuracy as a function of epochs"
         ylabel = f"{stype}-AUC score" if stype != "max_accuracy" else "Accuracy"
 
@@ -75,7 +79,7 @@ class LinkPredictionPlotter(Formatter):
         if show:
             plt.show()
 
-    def make_score_dim_plot(self, stype = "ROC", save = False, show = False):
+    def make_score_dim_plot(self, stype = "ROC", zoom=True,save = False, show = False):
         self.fig = plt.figure(figsize=self.figsize)
         ROC_scores = []
         ROC_errorbars = []
@@ -109,6 +113,8 @@ class LinkPredictionPlotter(Formatter):
         plt.scatter(dims,scores,marker='o',color='red',s=self.s_big,zorder=1)
         plt.xticks(range(1,11))
 
+        plt.ylim([0,1])
+
         title = f"{stype}-AUC score as a function of epochs" if stype != "max_accuracy" else f"Maximum accuracy as a function of epochs"
         ylabel = f"{stype}-AUC score" if stype != "max_accuracy" else "Accuracy"
 
@@ -119,7 +125,7 @@ class LinkPredictionPlotter(Formatter):
         if show:
             plt.show()
 
-    def make_score_month_plot(self, stype = "ROC", save = False, show = False):
+    def make_score_month_plot(self, stype = "ROC",save = False, show = False):
         self.fig = plt.figure(figsize=self.figsize)
         ROC_scores = []
         PR_scores = []
@@ -146,11 +152,13 @@ class LinkPredictionPlotter(Formatter):
         
         plt.plot(range(len(months)),scores,marker='o',mfc='red',markersize=self.markersize,lw = self.linewidth)
         plt.xticks(range(len(months)),months,rotation=45,fontsize=self.fontsize_ticks)
+        
+        plt.ylim([0,1])
 
         title = f"{stype}-AUC score as a function of months" if stype != "max_accuracy" else f"Maximum accuracy as a function of months"
         ylabel = f"{stype}-AUC score" if stype != "max_accuracy" else "Accuracy"
-
-        self.format_plot(title=title, subtitle=self.bmmname,
+        
+        self.format_plot(title=title, subtitle="{mtype}partite model {dim}D".format(mtype=self.mtype.capitalize(),dim=self.dim),
                          title_y=self.fig_title_y,xlabel="Month",ylabel=ylabel)
         if save:
             plt.savefig("{path}/{stype}_month_plot_{mtype}_D{dim:d}".format(path=self.store_path,stype=stype,mtype=self.mtype,dim=self.dim))
@@ -161,14 +169,14 @@ class LinkPredictionPlotter(Formatter):
         self.fig = plt.figure(figsize=self.figsize)
 
         path = f"/results/D{self.dim}/"
-
+        plt.ylim([0,1])
         scores = np.loadtxt(self.results_path + path+f"{stype.lower()}_train.txt")
         baseline_scores = np.loadtxt(self.results_path + path + "baseline_accuracy_train.txt")
         plt.plot(*scores.T, color="blue", label = "Link prediction", lw = self.linewidth)
         plt.plot(*baseline_scores.T, color = "green", label = "Baseline model", lw = self.linewidth)
         plt.legend(loc="lower right")
 
-        self.format_plot(title=f"Accuracy as a function of epochs", subtitle=self.dataname,
+        self.format_plot(title=f"Comparison in performance with baseline", subtitle=self.dataname,
                          title_y=self.fig_title_y, xlabel="Nr of epochs", ylabel="Accuracy")
         if save:
             plt.savefig("{path}/{stype}_baseline_plot_{mtype}_D{dim:d}".format(path=self.store_path, stype=stype,mtype=self.mtype,dim=self.dim))
@@ -182,14 +190,17 @@ class LinkPredictionPlotter(Formatter):
 blockchain="ETH"
 month="2021-02"
 mtypes=["bi","tri"]
-dims=[9]
+dims=[2,5]
 
 for mtype in mtypes:
     for dim in dims:
         lpp = LinkPredictionPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
-        lpp.make_score_dim_plot(save=True)
-        lpp.make_score_epoch_plot(stype="max_accuracy",save=True)
-        lpp.make_score_epoch_all_plot(stype="ROC",save=True)
-        lpp.make_score_epoch_all_plot(stype="max_accuracy",save=True)
+        #lpp.make_score_dim_plot(save=True)
+        #lpp.make_score_dim_plot(save=True)
+        #lpp.make_score_epoch_plot(stype="ROC",save=True)
+        #lpp.make_score_epoch_plot(stype="max_accuracy",save=True)
+        #lpp.make_score_epoch_all_plot(stype="ROC",save=True)
+        #lpp.make_score_epoch_all_plot(stype="max_accuracy",save=True)
         lpp.make_baseline_comparison_plot(save=True)
+        #lpp.make_score_month_plot(save=True)
         #lpp.make_score_month_plot(save=True)

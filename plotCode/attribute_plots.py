@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import datetime
 import os
 import platform
+from dateutil.relativedelta import relativedelta
 
 ###################
 # ATTRIBUTE PLOTS #
@@ -40,7 +41,7 @@ class AttributePlotter(Formatter):
         path = "{ndots}/data/Data_{dname}.csv".format(ndots=ndots,dname=self.dname)
         self.df = pd.read_csv(path, low_memory=True)
 
-    def plot_trades_per_category(self,start_date=datetime.datetime(2017,11,1),end_date=datetime.datetime(2021,4,30),save=False,show=False):
+    def plot_trades_per_category(self,start_date=datetime.datetime(2017,11,1),end_date=datetime.datetime(2021,4,30),padding=False,save=False,show=False):
         self.df['Datetime_updated'] = pd.to_datetime(self.df['Datetime_updated'], format='%Y-%m-%d')
         lower_limit = self.df['Datetime_updated'] >= start_date
         upper_limit = self.df['Datetime_updated'] <= end_date
@@ -52,6 +53,10 @@ class AttributePlotter(Formatter):
         x = data.index.get_level_values('Datetime_updated').unique()
         x = x.astype(str)
 
+        # add months for the WAX dataset
+        if self.dname == "WAX" and padding:
+            remaining_months = [(start_date+relativedelta(months =+ i)).strftime("%Y-%m") for i in range(0,31)]
+            x = np.concatenate((remaining_months,x),axis=None)
         self.fig = plt.figure(figsize=self.figsize)
 
         for category, color in self.colors.items():
@@ -59,15 +64,25 @@ class AttributePlotter(Formatter):
             # remove zeros from plot
             y = y.astype(float)
             y[y<=0] = np.nan
+            if self.dname == "WAX" and padding:
+                remaining_months = [np.nan for _ in range(0,31)]
+                y = np.concatenate((remaining_months,y),axis=None)
             plt.plot(x, y, color=color,label = category,linewidth=self.linewidth)
         
-        plt.legend(loc="lower right")
+        if self.dname == "WAX":
+            plt.legend(loc="upper left")
+        else:
+            plt.legend(loc="lower right")
         subtitle = self.namedict[self.dname]
         self.format_plot(title="Number of trades pr. month",subtitle=subtitle,title_y=self.fig_title_y,xlabel="Month",ylabel="Number of trades")
 
         ax = plt.gca()
-        n = 5
-        [l.set_visible(False) for (i,l) in enumerate(ax.xaxis.get_ticklabels()) if ((i-1) % n != 0 and i != 0) or (i == 1)]
+        n = 5 if not (self.dname == "WAX" and not padding) else 2
+        print(n)
+        if (self.dname == "WAX" and padding):
+            plt.xticks(range(len(x)),x)
+        tickboolean = lambda i : ((i-1) % n != 0 and i != 0) or (i == 1) if not (self.dname == "WAX" and not padding) else i % n != 0
+        [l.set_visible(False) for (i,l) in enumerate(ax.xaxis.get_ticklabels()) if tickboolean(i)]
         
 
         plt.xticks(rotation="vertical")
@@ -105,7 +120,7 @@ class AttributePlotter(Formatter):
 
 
 # choose dataset you are interested to investigate
-data = "ETH"
+data = "API"
 
 ap = AttributePlotter(dname=data)
 ap.plot_trades_per_category(save=True)

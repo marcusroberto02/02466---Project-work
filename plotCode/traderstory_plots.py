@@ -35,7 +35,7 @@ class TraderStoryPlotter(Formatter):
     u = None
 
     # size of points in the trader story plots
-    s_big = 150
+    s_big = 1000
     s_small = 40
 
     # coordinate name
@@ -45,7 +45,7 @@ class TraderStoryPlotter(Formatter):
     csuffix[3] = "rd"
 
     # legend symbolsize
-    legend_symbolsize = 100
+    legend_symbolsize = 200
 
     def __init__(self,blockchain="ETH",month="2021-02",mtype="tri",dim=2):
         self.initialize_fontsizes_big()
@@ -297,10 +297,10 @@ class TraderStoryPlotter(Formatter):
         plt.scatter(self.l[bought_nfts][:,d1-1],self.l[bought_nfts][:,d2-1], s = self.s_small, color = "red", label = "Bought NFTs")
 
         # plot the seller
-        plt.scatter(self.r[idx_seller,d1-1],self.r[idx_seller,d2-1], marker = "o",s = self.s_big, color = "blue", label = "Seller location")
+        plt.scatter(self.r[idx_seller,d1-1],self.r[idx_seller,d2-1], marker = "o",s = self.s_big, color = "purple", label = "Seller location")
         # plot the buyer
-        plt.scatter(self.u[idx_buyer,d1-1],self.u[idx_buyer,d2-1], marker="o",s=self.s_big, color = "purple", label = "Buyer location")
-        legend = plt.legend()
+        plt.scatter(self.u[idx_buyer,d1-1],self.u[idx_buyer,d2-1], marker="o",s=self.s_big, color = "blue", label = "Buyer location")
+        legend = plt.legend(loc="upper right")
         for handle in legend.legendHandles:
             handle.set_sizes([self.legend_symbolsize])
 

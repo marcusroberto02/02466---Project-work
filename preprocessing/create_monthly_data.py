@@ -10,15 +10,15 @@ from dateutil.relativedelta import relativedelta
 # main function
 def main():
     # define path for storing data
-    path = "./data/ETH/"
-    dataset_name = "data_ETH.csv"
+    path = "./data/WAX/"
+    dataset_name = "data_WAX.csv"
     
     # define start and end
-    start = datetime.datetime(2020, 1, 1)
+    start = datetime.datetime(2020, 6, 1)
     end = start + relativedelta(months =+ 1)
 
     # mark last month for storing data
-    last_month = datetime.datetime(2021, 4, 1)
+    last_month = datetime.datetime(2021, 5, 1)
     
     while start < last_month:
         dataset = pd.DataFrame()

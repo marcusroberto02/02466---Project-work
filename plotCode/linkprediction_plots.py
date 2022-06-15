@@ -55,6 +55,28 @@ class LinkPredictionPlotter(Formatter):
         if show:
             plt.show()
 
+    def make_combined_epoch_plot(self,stype = "ROC",dims = [2], save = False, show = False):
+        self.fig = plt.figure(figsize = self.figsize)
+
+        base_path = "/".join(self.results_path.split("/")[:-1])
+        for model in ['Bi','Tri']:
+            for dim in dims:
+                path = base_path + f"/{model.lower()}/results/D{dim}/{stype.lower()}_train.txt"
+                scores = np.loadtxt(path)
+                plt.plot(*scores.T, lw=self.linewidth, label = f"{model}partite {dim}D")
+
+        plt.ylim([0,1])
+        plt.legend()
+
+        title = f"{stype}-AUC score as a function of epochs" if stype != "max_accuracy" else f"Maximum accuracy as a function of epochs"
+        ylabel = f"{stype}-AUC score" if stype != "max_accuracy" else "Accuracy"
+        self.format_plot(title=title, subtitle=self.bmname,
+                         title_y=self.fig_title_y, xlabel="Nr. of epochs", ylabel=ylabel)
+        if save:
+            plt.savefig("{path}/{stype}_epoch_plot_combined".format(path=self.store_path, stype=stype))
+        if show:
+            plt.show()
+
     def make_score_epoch_all_plot(self,stype = "ROC",save = False, show = False):
         self.fig = plt.figure(figsize = self.figsize)
 
@@ -192,6 +214,11 @@ month="2021-02"
 mtypes=["bi","tri"]
 dims=[2,5]
 
+lpp = LinkPredictionPlotter(blockchain=blockchain,month=month,mtype="bi",dim=2)
+lpp.make_combined_epoch_plot(save = True, dims = [2,3])
+lpp.make_combined_epoch_plot(save = True,stype="PR", dims = [2,3])
+
+"""
 for mtype in mtypes:
     for dim in dims:
         lpp = LinkPredictionPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
@@ -203,4 +230,4 @@ for mtype in mtypes:
         lpp.make_score_epoch_all_plot(stype="max_accuracy",save=True)
         #lpp.make_baseline_comparison_plot(save=True)
         #lpp.make_score_month_plot(save=True)
-        
+"""

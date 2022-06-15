@@ -150,6 +150,49 @@ class ClassicationPlotter(Formatter):
         if show:
             plt.show()
 
+    def make_dim_plot_all(self,solver='lbfgs',k=5,save=False, show = False):
+        self.fig = plt.figure(figsize=self.barplot_figsize)
+        dims = range(1,11)
+        bi_reg_scores = []
+        bi_knn_scores = []
+        tri_reg_scores = []
+        tri_knn_scores = []
+        path = "/".join(self.results_path.split("/")[:-1])
+
+        y = np.loadtxt(self.results_path + "/sparse_c.txt",dtype="str").reshape(-1,1)
+        # encode y
+        encoder = LabelEncoder()
+        y = encoder.fit_transform(y.ravel())
+        for dim in dims:
+            X_bi = torch.load(path + "/bi" + "/results/D" + str(dim) + "/nft_embeddings").detach().numpy()
+            X_tri = torch.load(path + "/tri" + "/results/D" + str(dim) + "/nft_embeddings").detach().numpy()
+
+            # split data into train and test
+            X_train_bi, X_test_bi, y_train_bi, y_test_bi = train_test_split(X_bi, y, test_size=0.2, stratify=y, random_state=42)
+            X_train_tri, X_test_tri, y_train_tri, y_test_tri = train_test_split(X_tri, y, test_size=0.2, stratify=y,
+                                                                            random_state=42)
+
+            lr = lm.LogisticRegression(solver=solver, multi_class='multinomial', max_iter=1000, random_state=42)
+            knn = KNeighborsClassifier(n_neighbors=k)
+            bi_reg_scores.append(lr.fit(X_train_bi,y_train_bi).score(X_test_bi,y_test_bi))
+            bi_knn_scores.append(knn.fit(X_train_bi,y_train_bi).score(X_test_bi,y_test_bi))
+            tri_reg_scores.append(lr.fit(X_train_tri,y_train_tri).score(X_test_tri,y_test_tri))
+            tri_knn_scores.append(knn.fit(X_train_tri,y_train_tri).score(X_test_tri,y_test_tri))
+
+        plt.plot(dims, bi_reg_scores, marker='o', mfc='black', markersize=self.markersize, lw=self.linewidth, label = "Bi LogReg")
+        plt.plot(dims, bi_knn_scores, marker='o', mfc='black', markersize=self.markersize, lw=self.linewidth, label = "Bi KNN")
+        plt.plot(dims, tri_reg_scores, marker='o', mfc='black', markersize=self.markersize, lw=self.linewidth, label = "Tri LogReg")
+        plt.plot(dims, tri_knn_scores, marker='o', mfc='black', markersize=self.markersize, lw=self.linewidth, label = "Tri KNN")
+        plt.xticks(dims, dims)
+        plt.legend()
+        plt.ylim([0, 1])
+        self.format_plot(title = "Model performances as a function of latent dimensions",
+                         subtitle = self.bmname,xlabel="Nr. of latent dimensiosn", ylabel = "Accuracy")
+        if save:
+            plt.savefig("{path}/dim_plot_all_models".format(path=self.store_path))
+        if show:
+            plt.show()
+
     def train_k_nearest_neighbors(self,k=5):
         self.knn = KNeighborsClassifier(n_neighbors=k)
         self.knn.fit(self.X_train, self.y_train)
@@ -239,6 +282,9 @@ month="2021-02"
 mtypes=["bi","tri"]
 dims=[2]
 
+cp = ClassicationPlotter(blockchain="ETH",month=month,mtype="bi",dim=2)
+cp.make_dim_plot_all(save = True)
+"""
 for mtype in mtypes:
     for dim in dims:
         #print(mtype,dim)
@@ -260,3 +306,4 @@ for mtype in mtypes:
         #cp.make_confusion_matrix("Optimal KNN",save=True)
         #cp.train_optimal_k_nearest_neighbors(save=True)
         #cp.print_baseline_model_performance()
+"""

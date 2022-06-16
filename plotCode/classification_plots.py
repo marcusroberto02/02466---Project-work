@@ -168,6 +168,7 @@ class ClassicationPlotter(Formatter):
         if save or show:
             self.fig = plt.figure(figsize=self.barplot_figsize)
             plt.plot(n_neighbors,knn_scores,marker='o',mfc='red',markersize=self.markersize,linewidth=self.linewidth)
+            plt.ylim([0,1])
             self.format_plot(title="K-nearest neighbors performance plot",subtitle=self.dataname,title_y=self.barplot_title_y,xlabel="Number of neighbors",ylabel="Accuracy")
         
         if save:
@@ -236,13 +237,14 @@ class ClassicationPlotter(Formatter):
 # choose data set to investigate
 blockchain="ETH"
 month="2021-02"
-mtypes=["bi","tri"]
+mtypes=["bi"]
 dims=[2]
 
 for mtype in mtypes:
     for dim in dims:
         #print(mtype,dim)
         cp = ClassicationPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+        cp.print_class_distribution()
         #cp.print_class_distribution()
         #cp.print_encoding_labels()
         #logreg = lm.LogisticRegression(solver='lbfgs', multi_class='multinomial', max_iter=1000, random_state=42)
@@ -255,8 +257,8 @@ for mtype in mtypes:
         #cp.make_barplot_test(save=True)
         #cp.make_model_dim_plot(modeltype="multinomial",save=True)
         #cp.make_model_dim_plot(modeltype="KNN",k=10,save=True)
-        cp.make_confusion_matrix("multinomial",save=True)
-        cp.make_confusion_matrix("KNN",k=10,save=True)
+        #cp.make_confusion_matrix("multinomial",save=True)
+        #cp.make_confusion_matrix("KNN",k=10,save=True)
         #cp.make_confusion_matrix("Optimal KNN",save=True)
         #cp.train_optimal_k_nearest_neighbors(save=True)
         #cp.print_baseline_model_performance()

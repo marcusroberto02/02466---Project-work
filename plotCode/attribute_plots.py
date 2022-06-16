@@ -22,7 +22,7 @@ class AttributePlotter(Formatter):
     linewidth = 5
 
     # color for embeddings
-    colors = {'Games':'red','Art':'green','Collectible':'blue','Metaverse':'orange','Other':'purple','Utility':'brown'}
+    colors = {'Art':'green','Collectible':'blue','Games':'red','Metaverse':'orange','Other':'purple','Utility':'brown'}
     
     # name for the dataset
     namedict = {"API":"Full dataset","ETH":"Ethereum blockchain","WAX":"WAX blockchain"}
@@ -96,7 +96,7 @@ class AttributePlotter(Formatter):
             
 
 
-    def category_analysis(self,df, start_date, end_date):
+    def category_analysis(self,start_date,end_date):
         self.df['Datetime_updated'] = pd.to_datetime(self.df['Datetime_updated'], format='%Y-%m-%d')
         lower_limit = self.df['Datetime_updated'] >= start_date
         upper_limit = self.df['Datetime_updated'] <= end_date
@@ -124,4 +124,6 @@ data = "API"
 
 ap = AttributePlotter(dname=data)
 ap.plot_trades_per_category(save=True)
-#category_analysis(df,start_date,end_date)
+#start_date=datetime.datetime(2021,2,1)
+#end_date=datetime.datetime(2021,3,1)
+#ap.category_analysis(start_date,end_date)

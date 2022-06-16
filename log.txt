@@ -1,0 +1,178 @@
+2140b83 - Marcus Roberto Nielsen, 12 hours ago : added new data for 2021-03 and updated plot code
+e7349ab - Marcus Roberto Nielsen, 22 hours ago : added linewidth
+1a580a5 - Marcus Roberto Nielsen, 22 hours ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+c38c042 - Marcus Roberto Nielsen, 22 hours ago : updated plot code for attribute plots
+6f69b7b - r0vina, 23 hours ago : Normal and log-normal fit added, dots updated for linux.
+659a67e - Marcus Roberto Nielsen, 35 hours ago : made big progress for the trader story plots
+3db15f4 - Marcus Roberto Nielsen, 2 days ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+466930f - Marcus Roberto Nielsen, 2 days ago : added results
+ff97f46 - khelverskovp, 2 days ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+e17c441 - khelverskovp, 2 days ago : Create attribute_plots.py
+eaa6bac - Marcus Roberto Nielsen, 2 days ago : added new data
+67ac16d - Marcus Roberto Nielsen, 3 days ago : the plot code is almost finished
+2282bfa - Marcus Roberto Nielsen, 3 days ago : m
+93910c5 - Marcus Roberto Nielsen, 3 days ago : introduced linewidth variable
+a81d3e9 - Mads, 3 days ago : added linewidth
+828aa56 - Mads, 3 days ago : Merge remote-tracking branch 'origin/main' into main
+d3c6aeb - Mads, 3 days ago : added linewidth
+4feced9 - Marcus Roberto Nielsen, 3 days ago : m
+8773932 - Marcus Roberto Nielsen, 3 days ago : small changes
+b62995c - Mads, 3 days ago : Calling the plots
+5a164b7 - Mads, 3 days ago : Title correction
+8057865 - Mads, 3 days ago : baseline vs linkprediction plot
+e142cd4 - Marcus Roberto Nielsen, 3 days ago : m
+3fcfd7b - Marcus Roberto Nielsen, 3 days ago : consistent parent folder between operating systems
+c080a23 - Mads, 3 days ago : Correction in plot name
+3c5434f - Mads, 3 days ago : ROC/PR epoch plot
+e5715bc - Marcus Roberto Nielsen, 3 days ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+42271e0 - Marcus Roberto Nielsen, 3 days ago : m
+155342e - Mads, 3 days ago : ROC PR SCORE PLOT
+7cebab8 - Marcus Roberto Nielsen, 3 days ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+c94c706 - Marcus Roberto Nielsen, 3 days ago : test
+9ab76ac - Mads, 3 days ago : ROC PR plot
+03ffd98 - Marcus Roberto Nielsen, 3 days ago : m
+aba6bab - Marcus Roberto Nielsen, 3 days ago : path corrections
+ff66d16 - Marcus Roberto Nielsen, 3 days ago : label error fixed
+3d02208 - Marcus Roberto Nielsen, 3 days ago : moved fontsize code
+a107ff2 - Marcus Roberto Nielsen, 3 days ago : generalized plotting into classes
+846e1d4 - Marcus Roberto Nielsen, 3 days ago : moved classification file
+1660a81 - Marcus Roberto Nielsen, 3 days ago : restored classification file
+e267690 - Marcus Roberto Nielsen, 3 days ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+277754a - Marcus Roberto Nielsen, 3 days ago : added data for dimension 1 and 4-10 for bi and tri
+70c4fd3 - Mads, 3 days ago : Fixed some comments
+98ef5c0 - Mads, 3 days ago : Created plot code for the trader stories
+9e243a4 - marcusroberto02, 4 days ago : Rename Classification_and_Clustering.py to classification_and_clustering.py
+68e8f20 - Marcus Roberto Nielsen, 4 days ago : automated the plot script for classification
+1873cdc - Marcus Roberto Nielsen, 4 days ago : updated plots
+f2aaf59 - Marcus Roberto Nielsen, 4 days ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+f41ad63 - Marcus Roberto Nielsen, 4 days ago : made nicer scatter plots for 3d
+4a3ea23 - khelverskovp, 4 days ago : Update Classification_and_Clustering.py
+3f6ecee - Marcus Roberto Nielsen, 5 days ago : m
+77d1bae - r0vina, 5 days ago : Merge remote-tracking branch 'origin/main'
+c83bbf9 - r0vina, 5 days ago : Tri D2 100
+c755988 - Marcus Roberto Nielsen, 5 days ago : 3d plots
+89aff1d - Marcus Roberto Nielsen, 5 days ago : m
+fc5a634 - Marcus Roberto Nielsen, 5 days ago : moved results
+8b1b4f7 - Marcus Roberto Nielsen, 5 days ago : m
+1686b3d - Marcus Roberto Nielsen, 5 days ago : added directory
+5b480e5 - r0vina, 5 days ago : Tri D2
+02ab4ca - Marcus Roberto Nielsen, 5 days ago : added D3 tri results for 2021-02
+f5884bc - Marcus Roberto Nielsen, 5 days ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+bc90041 - r0vina, 5 days ago : Results for Bi, D2 and D3
+f4c97ab - Marcus Roberto Nielsen, 5 days ago : m
+c30c508 - Marcus Roberto Nielsen, 5 days ago : check for positive edges
+2cfdcd9 - Marcus Roberto Nielsen, 6 days ago : small changes
+81b5114 - Marcus Roberto Nielsen, 6 days ago : ready for gpu cluster
+ec8ca64 - Marcus Roberto Nielsen, 6 days ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+8a73e51 - Marcus Roberto Nielsen, 6 days ago : included baseline models for link prediction and classification
+c672bb5 - r0vina, 6 days ago : function plot_clusters to plot k-means clusters.
+6abe3b5 - Marcus Roberto Nielsen, 6 days ago : small changes
+5d23f2f - Marcus Roberto Nielsen, 7 days ago : restructured the preprocessing of seller and buyer ids
+b30a5f6 - Marcus Roberto Nielsen, 7 days ago : identical ids for both sellers and buyers
+de01fc6 - Marcus Roberto Nielsen, 8 days ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+2134615 - Marcus Roberto Nielsen, 8 days ago : combined the code into one main script
+d29bee4 - r0vina, 9 days ago : Log histograms for sellers, buyers, traders and NFTs.
+ba4ccda - Marcus Roberto Nielsen, 9 days ago : added plotting for embeddings
+d56670b - Marcus Roberto Nielsen, 11 days ago : create test batch method for link prediction
+ea4f4f8 - Marcus Roberto Nielsen, 13 days ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+e62ace9 - Marcus Roberto Nielsen, 13 days ago : disccomps.txt
+ad106f4 - Mads, 13 days ago : Created the datasets for the blockchains ETH and WAX, and created monthly data sets for each.
+0d22196 - khelverskovp, 13 days ago : Code for creating blockchain data set + organization of code
+2ab120b - Marcus Roberto Nielsen, 13 days ago : disccomp update
+f5e4299 - Marcus Roberto Nielsen, 6 weeks ago : code for finding disconnected components in the network
+05abc08 - Marcus Roberto Nielsen, 6 weeks ago : implemented minibatching for bipartite network and link prediction for both bi and tri
+2bec076 - Marcus Roberto Nielsen, 7 weeks ago : create monthly datasets have been implemented
+657ac7f - Marcus Roberto Nielsen, 7 weeks ago : m
+844ccd0 - Marcus Roberto Nielsen, 7 weeks ago : load embeddings changes
+e30f33f - Mads, 7 weeks ago : Added comments
+4c7dc9c - Mads, 7 weeks ago : Script that creates sparse test and training set for all months in a certain range
+9e86884 - Mads, 7 weeks ago : Merge remote-tracking branch 'origin/main' into main
+5deffdf - Marcus Roberto Nielsen, 7 weeks ago : implemented mini batching
+9daee05 - Mads, 7 weeks ago : Merge remote-tracking branch 'origin/main' into main
+3f2b8d4 - Marcus Roberto Nielsen, 7 weeks ago : last changes
+33dd3d6 - Mads, 7 weeks ago : Merge remote-tracking branch 'origin/main' into main
+3923b2d - Marcus Roberto Nielsen, 7 weeks ago : dude jeg pusher nu
+7dc18cc - Mads, 7 weeks ago : Merge remote-tracking branch 'origin/main' into main
+6d366db - Marcus Roberto Nielsen, 7 weeks ago : m
+3e00935 - Marcus Roberto Nielsen, 7 weeks ago : m
+32f39bb - Marcus Roberto Nielsen, 7 weeks ago : updated the code for data preprocessing
+1ddf7fd - khelverskovp, 7 weeks ago : lavet ny fil til clustering og classification
+1e29f59 - Mads, 7 weeks ago : Merge remote-tracking branch 'origin/main' into main
+9cfd7a4 - khelverskovp, 7 weeks ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+e5e47ff - khelverskovp, 7 weeks ago : metrics til node classification
+9e8df13 - Marcus Roberto Nielsen, 7 weeks ago : m
+dee0142 - Marcus Roberto Nielsen, 7 weeks ago : changes to the ldm_tri class
+6c4b166 - Mads, 7 weeks ago : Merge remote-tracking branch 'origin/main' into main
+2b2ecd5 - khelverskovp, 8 weeks ago : metrics til node classification
+db66c21 - khelverskovp, 8 weeks ago : tilføjet kode til node classification og kmeans clustering
+b01c781 - Mads, 8 weeks ago : Merge remote-tracking branch 'origin/main' into main
+f5fe0fe - Mads, 8 weeks ago : Added the model file
+5c7ab90 - Marcus Roberto Nielsen, 8 weeks ago : updated the preprocessing of the data for the bipartite case
+d69431b - Marcus Roberto Nielsen, 8 weeks ago : implemented the likelihood function for the tripartite ldm model
+404651a - Marcus Roberto Nielsen, 2 months ago : m
+4d93c01 - Marcus Roberto Nielsen, 2 months ago : tritri
+71a5fac - Mads, 2 months ago : Tri sparse data
+0b95ad4 - Marcus Roberto Nielsen, 2 months ago : small updates to tri
+15f625e - r0vina, 2 months ago : Script that generates data plots
+2a9a122 - r0vina, 2 months ago : Merge branch 'main' of github.com:marcusroberto02/02466---Project-work
+79d7065 - khelverskovp, 2 months ago : Organiseret filer i mapper
+fafabab - r0vina, 2 months ago : Script that generates data plots
+bbbee87 - khelverskovp, 2 months ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+dff7f3b - Mads, 2 months ago : test
+d67ce2c - Mads, 2 months ago : Nogle sweet plots
+d36e616 - r0vina, 2 months ago : Merge branch 'main' of github.com:marcusroberto02/02466---Project-work
+f836494 - khelverskovp, 2 months ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+842e5af - Marcus Roberto Nielsen, 3 months ago : ldm code for bipartite version 1 is working
+f40df1a - r0vina, 3 months ago : Merge branch 'main' of github.com:marcusroberto02/02466---Project-work
+0f83c55 - Mads, 3 months ago : Merge remote-tracking branch 'origin/main' into main
+3e4c772 - Mads, 3 months ago : Created file that can turn a DataFrame of trades into a DataFrame containing the non sparse indexes of trades
+230809a - r0vina, 3 months ago : added data
+ae59534 - r0vina, 3 months ago : Cleaned and edited comments
+faabc14 - r0vina, 3 months ago : Merge remote-tracking branch 'origin/main'
+ac1a508 - r0vina, 3 months ago : A suggested method to get i's and j's
+f3d722d - Mads, 3 months ago : Sparse script
+10e4dae - Mads, 3 months ago : Merge remote-tracking branch 'origin/main' into main
+757fa26 - Marcus Roberto Nielsen, 3 months ago : opdatering af ldm fil
+c7f6252 - kasperh1-coder, 3 months ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+8d3e78d - Mads, 3 months ago : Merge remote-tracking branch 'origin/main' into main
+8cd2ec7 - Mads, 3 months ago : test
+2e6822e - Mads-Ringsted, 3 months ago : Delete .idea directory
+eece34a - Mads-Ringsted, 3 months ago : Update .gitignore
+1144edc - Mads, 3 months ago : model file
+12e8814 - Mads, 3 months ago : Added the model file
+fae86fc - r0vina, 3 months ago : Merge remote-tracking branch 'origin/main'
+ed7c830 - kasperh1-coder, 3 months ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+9b60535 - r0vina, 3 months ago : Roneet's first commit.
+06dd3ab - Marcus Roberto Nielsen, 3 months ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+080da08 - Marcus Roberto Nielsen, 3 months ago : hey
+8314fdb - Mads-Ringsted, 3 months ago : Rename Toy_dataset.py to toy_dataset.py
+8229130 - Mads-Ringsted, 3 months ago : Rename MARCUSKANBAREIKKERENAMEAHAHA_dataset.py to Toy_dataset.py
+6763356 - kasperh1-coder, 3 months ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+0c5b94f - Mads-Ringsted, 3 months ago : Rename yot_dataset.py to MARCUSKANBAREIKKERENAMEAHAHA_dataset.py
+05375a6 - Marcus Roberto Nielsen, 3 months ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+e72d707 - Marcus Roberto Nielsen, 3 months ago : små bogstaver!!!!
+1fb0631 - Mads-Ringsted, 3 months ago : Rename Toy_dataset.py to yot_dataset.py
+dd57686 - kasperh1-coder, 3 months ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+81134c6 - Mads-Ringsted, 3 months ago : Create Toy_dataset.py
+70e251c - Marcus Roberto Nielsen, 3 months ago : updates
+d500330 - kasperh1-coder, 3 months ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+ae786c7 - Marcus Roberto Nielsen, 3 months ago : creating toy data
+cbfbf93 - kasperh1-coder, 3 months ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+a650591 - Mads, 3 months ago : Merge remote-tracking branch 'origin/main' into main
+23bf81f - Mads, 3 months ago : pls dont fuck it up this time
+8c13b34 - kasperh1-coder, 3 months ago : Merge branch 'main' of https://github.com/marcusroberto02/02466---Project-work
+3156038 - Mads-Ringsted, 3 months ago : Delete .idea directory
+6d49178 - kasperh1-coder, 3 months ago : test kasper
+5900669 - Mads, 3 months ago : tror sgu den er i hus
+bc58ef7 - Mads, 3 months ago : YEPPER
+8519484 - Mads, 3 months ago : Merge remote-tracking branch 'origin/main' into main
+2dfb382 - Mads, 3 months ago : Test2
+f3eaf75 - Marcus Roberto Nielsen, 3 months ago : changes to preprocessing file
+0c58047 - Marcus Roberto Nielsen, 3 months ago : Preprocessing file created
+740b8c5 - Mads, 3 months ago : Test
+c82b8a3 - Marcus Roberto Nielsen, 3 months ago : Change in test file
+5ad8b14 - kasperh1-coder, 3 months ago : Merge remote-tracking branch 'origin/main'
+796dfdc - kasperh1-coder, 3 months ago : test kasper
+8180f44 - Marcus Roberto Nielsen, 3 months ago : Added a gitignore file
+abad980 - Marcus Roberto Nielsen, 3 months ago : First upload
+ea4a7ca - marcusroberto02, 3 months ago : Initial commit

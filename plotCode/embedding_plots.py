@@ -19,7 +19,7 @@ class EmbeddingPlotter2D(Formatter):
     fig_title_y = (0.95,0.90) 
 
     # color for embeddings
-    colors = {'Games':'red','Art':'green','Collectible':'blue','Metaverse':'orange','Other':'purple','Utility':'brown'}
+    colors = {'Art':'green','Collectible':'blue','Games':'red','Metaverse':'orange','Other':'purple','Utility':'brown'}
     
     # empty embedding variables for bi
     z = None
@@ -405,21 +405,21 @@ class EmbeddingPlotter3D(Formatter):
 
 # choose data set to investigate
 blockchain="ETH"
-month="2021-01"
+month="2021-02"
 mtypes=["bi","tri"]
-dims=[3]
-
-# mtype in mtypes:
-#    for dim in dims:
-#        ep = EmbeddingPlotter2D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
-#        ep.make_scatter_plot(save=True)
-#        ep.make_category_plot(save=True)
-#        ep.make_scatter_plot_all(save=True)
-#        ep.make_category_plot_all(save=True)
-
+dims=[2]
 
 for mtype in mtypes:
     for dim in dims:
-        ep = EmbeddingPlotter3D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+        ep = EmbeddingPlotter2D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
         ep.make_scatter_plot(save=True)
         ep.make_category_plot(save=True)
+#       ep.make_scatter_plot_all(save=True)
+#       ep.make_category_plot_all(save=True)
+
+
+#for mtype in mtypes:
+#    for dim in dims:
+#        ep = EmbeddingPlotter3D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+#        #ep.make_scatter_plot(save=True)
+#        ep.make_category_plot(save=True)

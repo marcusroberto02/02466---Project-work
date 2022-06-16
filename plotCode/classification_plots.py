@@ -9,6 +9,8 @@ from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from sklearn.model_selection import train_test_split
 from collections import Counter
 import torch
+import scipy.stats
+import scipy.stats as st
 
 #######################
 # NODE CLASSIFICATION #
@@ -275,15 +277,85 @@ class ClassicationPlotter(Formatter):
 
         print("Majority class voting accuracy: {accuracy:0.2f}%".format(accuracy=accuracy))
         print("Number of misclassifications for majority voting: {nwrong} out of {ntotal}".format(nwrong=misclassifications,ntotal=len(self.y_test)))
+    
+    def get_mcNemar_test(self):
+        alpha = 0.05
+
+        # get baseline model predictions
+        majority_class = np.argmax([sum(self.y_train==c) for c in np.unique(list(self.y_train))])
+        y_pred_base = [majority_class] * len(self.y_test)
+
+        # get knn model predictions
+        if self.knn is None:
+            # train multinomial logistic regression
+            self.train_k_nearest_neighbors()
+        y_pred_knn = self.knn.predict(self.X_test)
+
+        # get mlr model predictions
+        if self.logreg is None:
+            # train multinomial logistic regression
+            self.train_multinomial_logistic_regression()
+        y_pred_mlr = self.logreg.predict(self.X_test)
+
+        # baseline vs. knn 
+        m1, CI1, p1 = self.mcnemar(self.y_test, y_pred_base, y_pred_knn, alpha)
+        print("")
+        # baseline vs. mlr
+        m2, CI2, p2 = self.mcnemar(self.y_test, y_pred_base, y_pred_mlr, alpha)
+        print("")
+        # knn vs. mlr
+        m2, CI2, p2 = self.mcnemar(self.y_test, y_pred_knn, y_pred_mlr, alpha)
+    
+    def mcnemar(self, y_true, yhatA, yhatB, alpha=0.05): 
+        # code taken from DTU course 02450 "Introduction to machine learning and data mining" code toolbox provided to students
+        # perform McNemars test
+        nn = np.zeros((2,2))
+        c1 = yhatA - y_true == 0
+        c2 = yhatB - y_true == 0
+
+        nn[0,0] = sum(c1 & c2)
+        nn[0,1] = sum(c1 & ~c2)
+        nn[1,0] = sum(~c1 & c2)
+        nn[1,1] = sum(~c1 & ~c2)
+
+        n = sum(nn.flat);
+        n12 = nn[0,1]
+        n21 = nn[1,0]
+
+        thetahat = (n12-n21)/n
+        Etheta = thetahat
+
+        Q = n**2 * (n+1) * (Etheta+1) * (1-Etheta) / ( (n*(n12+n21) - (n12-n21)**2) )
+
+        p = (Etheta + 1)*0.5 * (Q-1)
+        q = (1-Etheta)*0.5 * (Q-1)
+
+        CI = tuple(lm * 2 - 1 for lm in scipy.stats.beta.interval(1-alpha, a=p, b=q) )
+
+        p = 2*scipy.stats.binom.cdf(min([n12,n21]), n=n12+n21, p=0.5)
+        print("Result of McNemars test using alpha=", alpha)
+        print("Comparison matrix n")
+        print(nn)
+        if n12+n21 <= 10:
+            print("Warning, n12+n21 is low: n12+n21=",(n12+n21))
+
+        print("Approximate 1-alpha confidence interval of theta: [thetaL,thetaU] = ", CI)
+        print("p-value for two-sided test A and B have same accuracy (exact binomial test): p=", p)
+
+        return thetahat, CI, p
+
         
 # choose data set to investigate
 blockchain="ETH"
-month="2021-02"
+month="2021-03"
 mtypes=["bi","tri"]
 dims=[2]
 
 cp = ClassicationPlotter(blockchain="ETH",month=month,mtype="bi",dim=2)
-cp.make_dim_plot_all(save = True)
+cp.get_mcNemar_test()
+
+
+#cp.make_dim_plot_all(save = True, show=True)
 """
 for mtype in mtypes:
     for dim in dims:
@@ -307,3 +379,7 @@ for mtype in mtypes:
         #cp.train_optimal_k_nearest_neighbors(save=True)
         #cp.print_baseline_model_performance()
 """
+
+
+
+

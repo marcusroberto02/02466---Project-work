@@ -281,30 +281,89 @@ class ClassicationPlotter(Formatter):
     def get_mcNemar_test(self):
         alpha = 0.05
 
-        # get baseline model predictions
-        majority_class = np.argmax([sum(self.y_train==c) for c in np.unique(list(self.y_train))])
-        y_pred_base = [majority_class] * len(self.y_test)
+        y = np.loadtxt(self.results_path + "/sparse_c.txt",dtype="str").reshape(-1,1)
+        # encode y
+        encoder = LabelEncoder()
+        y = encoder.fit_transform(y.ravel())
 
-        # get knn model predictions
-        if self.knn is None:
-            # train multinomial logistic regression
-            self.train_k_nearest_neighbors()
-        y_pred_knn = self.knn.predict(self.X_test)
+        path = "/".join(self.results_path.split("/")[:-1])
 
-        # get mlr model predictions
-        if self.logreg is None:
-            # train multinomial logistic regression
-            self.train_multinomial_logistic_regression()
-        y_pred_mlr = self.logreg.predict(self.X_test)
+        X_bi = torch.load(path + "/bi" + "/results/D" + str(3) + "/nft_embeddings").detach().numpy()
+        X_tri = torch.load(path + "/tri" + "/results/D" + str(3) + "/nft_embeddings").detach().numpy()
 
-        # baseline vs. knn 
-        m1, CI1, p1 = self.mcnemar(self.y_test, y_pred_base, y_pred_knn, alpha)
-        print("")
-        # baseline vs. mlr
-        m2, CI2, p2 = self.mcnemar(self.y_test, y_pred_base, y_pred_mlr, alpha)
-        print("")
-        # knn vs. mlr
-        m2, CI2, p2 = self.mcnemar(self.y_test, y_pred_knn, y_pred_mlr, alpha)
+         # split data into train and test
+        X_train_bi, X_test_bi, y_train_bi, y_test_bi = train_test_split(X_bi, y, test_size=0.2, stratify=y, random_state=42)
+        X_train_tri, X_test_tri, y_train_tri, y_test_tri = train_test_split(X_tri, y, test_size=0.2, stratify=y,
+                                                                        random_state=42)
+
+        print("check of tran and test for bi and tri")
+        print(sum(y_train_bi==y_train_tri) == len(y_train_bi))
+
+        #### get KNN BI and TRI
+        knn_bi = KNeighborsClassifier(n_neighbors=10)
+        knn_bi.fit(X_train_bi, y_train_bi)
+        y_pred_knn_bi = knn_bi.predict(X_test_bi)
+
+        knn_tri = KNeighborsClassifier(n_neighbors=10)
+        knn_tri.fit(X_train_tri, y_train_tri)
+        y_pred_knn_tri = knn_tri.predict(X_test_tri)
+
+
+        #### get MLR BI and TRI
+        mlr_bi = lm.LogisticRegression(solver='lbfgs', multi_class='multinomial', max_iter=1000, random_state=42)
+        mlr_bi.fit(X_train_bi, y_train_bi)
+        y_pred_mlr_bi = mlr_bi.predict(X_test_bi)
+
+        mlr_tri = lm.LogisticRegression(solver='lbfgs', multi_class='multinomial', max_iter=1000, random_state=42)
+        mlr_tri.fit(X_train_tri, y_train_tri)
+        y_pred_mlr_tri = mlr_tri.predict(X_test_tri)
+
+        #### get baseline
+        majority_class = np.argmax([sum(y_train_bi==c) for c in np.unique(list(y_train_bi))])
+        y_pred_base = [majority_class] * len(y_test_bi)
+
+
+        # baseline vs. knn_bi
+        print("baseline vs. knn_bi")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_base, y_pred_knn_bi, alpha)
+
+        # baseline vs. knn_tri
+        print("baseline vs. knn_tri")
+        m1, CI1, p1 = self.mcnemar(y_test_tri, y_pred_base, y_pred_knn_tri, alpha)  
+      
+        # baseline vs. mlr_bi
+        print("baseline vs. mlr_bi")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_base, y_pred_mlr_bi, alpha)
+
+        # baseline vs. mlr_tri
+        print("baseline vs. mlr_tri")
+        m1, CI1, p1 = self.mcnemar(y_test_tri, y_pred_base, y_pred_mlr_tri, alpha)
+
+        # knn_bi vs. knn_tri
+        print("knn_bi vs. knn_tri")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_knn_bi, y_pred_knn_tri, alpha)
+
+        # knn_bi vs. mlr_bi
+        print("knn_bi vs. mlr_bi")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_knn_bi, y_pred_mlr_bi, alpha)
+
+        # knn_bi vs. mlr_tri 
+        print("knn_bi vs. mlr_tri")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_knn_bi, y_pred_mlr_tri, alpha)
+
+        # knn_tri vs. mlr_bi
+        print("knn_tri vs. mlr_bi")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_knn_tri, y_pred_mlr_bi, alpha)
+
+        # knn_tri vs. mlr_tri
+        print("knn_tri vs. mlr_tri")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_knn_tri, y_pred_mlr_tri, alpha)
+
+        # mlr_bi vs. mlr_tri
+        print("mlr_bi vs. mlr_tri")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_mlr_bi, y_pred_mlr_tri, alpha)
+
+       
     
     def mcnemar(self, y_true, yhatA, yhatB, alpha=0.05): 
         # code taken from DTU course 02450 "Introduction to machine learning and data mining" code toolbox provided to students
@@ -349,9 +408,9 @@ class ClassicationPlotter(Formatter):
 blockchain="ETH"
 month="2021-03"
 mtypes=["bi","tri"]
-dims=[2]
+dims=[3]
 
-cp = ClassicationPlotter(blockchain="ETH",month=month,mtype="bi",dim=2)
+cp = ClassicationPlotter(blockchain="ETH",month=month,mtype="bi",dim=3)
 cp.get_mcNemar_test()
 
 

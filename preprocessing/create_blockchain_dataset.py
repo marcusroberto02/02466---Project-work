@@ -2,8 +2,8 @@ import pandas as pd
 
 # name of the data set
 # name = "data_ETH"
-name = "data_WAX"
-cryptos = ['WAX']
+name = "data_ETH"
+cryptos = ['ETH']
 # choose which cryptos should be included
 #cryptos = ['0xBTC', '1MT', 'ABST', 'AMPL', 'ANRX', 'ARCONA', 'ART', 'ASLT',
 #            'ATRI', 'AVRT', 'B0T', 'BAEPAY', 'BASED', 'BAT', 'BLVD', 'BON',

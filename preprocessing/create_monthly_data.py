@@ -11,7 +11,7 @@ from dateutil.relativedelta import relativedelta
 def main():
     # define path for storing data
     path = "./data/WAX/"
-    dataset_name = "data_WAX.csv"
+    dataset_name = "Data_WAX.csv"
     
     # define start and end
     start = datetime.datetime(2020, 6, 1)

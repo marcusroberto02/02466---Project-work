@@ -78,7 +78,6 @@ class TraderStoryPlotter(Formatter):
         # Remove top and right spines
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-
         # the scatter plot:
         ax.scatter(x, y)
 
@@ -138,7 +137,7 @@ class TraderStoryPlotter(Formatter):
         if normalize:
             sb = (sb - np.mean(sb)) / np.std(sb)
             bb = (bb - np.mean(bb)) / np.std(bb)
-        self.scatter_hist(sb,bb, ax, ax_histx, ax_histy,normalize=normalize,remove_origin=remove_origin)
+        self.scatter_hist(sb, bb, ax, ax_histx, ax_histy,normalize=normalize,remove_origin=remove_origin)
         title = "Seller and buyer biases distribution"
         title += " - Normalized" if normalize else ""
         self.set_titles_3D(title=title,subtitle=self.dataname,title_y=self.fig_title_y)
@@ -335,9 +334,8 @@ class TraderStoryPlotter(Formatter):
             plt.savefig("{path}/{story}_story_plot_{mtype}_D{dim:d}".format(path=self.store_path,story=story,mtype=self.mtype,dim=self.dim))
         if show:
             plt.show()
-        
 
-        
+
 
 
 # choose data set to investigate
@@ -348,14 +346,16 @@ dims=[2]
 
 for dim in dims:
     tsp = TraderStoryPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
-    #tsp.make_bias_distribution_plot(remove_origin=(3,3),save=True)
+    #tsp.degree_heterogeneity_plot(show=True)
+    tsp.make_bias_distribution_plot(remove_origin=(3,3),save=True, show =True)
     #tsp.make_bias_distribution_plot(normalize=True,remove_origin=(3,3),save=True)
     #tsp.make_only_sellers_bias_distribution_plot(save=True)
     #tsp.make_only_buyers_bias_distribution_plot(save=True)
     #tsp.make_distance_distribution_plot(save=True)
-    tsp.make_trader_story_plot_2D(save=True)
-    tsp.make_trader_story_plot_2D(story="most_frequent_seller",save=True)
-    tsp.make_trader_story_plot_2D(story="most_frequent_buyer",save=True)
-    tsp.make_trader_story_plot_2D(story="most_active_trader",save=True)
-    tsp.make_trader_story_plot_2D(story="custom_trader",min_sales=100,min_purchases=100,save=True)
+    #tsp.make_trader_story_plot_2D(save=True)
+    #tsp.make_trader_story_plot_2D(story="most_frequent_seller",save=True)
+    #tsp.make_trader_story_plot_2D(story="most_frequent_buyer",save=True)
+    #tsp.make_trader_story_plot_2D(story="most_active_trader",save=True)
+    #tsp.make_trader_story_plot_2D(story="custom_trader",min_sales=100,min_purchases=100,save=True)
+
     

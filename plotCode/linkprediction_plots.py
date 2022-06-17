@@ -210,7 +210,7 @@ class LinkPredictionPlotter(Formatter):
     
 # choose data set to investigate
 blockchain="ETH"
-month="2021-02"
+month="2021-03"
 mtypes=["bi","tri"]
 dims=[2,5]
 

@@ -261,8 +261,8 @@ class EmbeddingPlotter3D(Formatter):
     csuffix[3] = "rd"
 
     # size of each data point in plot
-    s_big = 0.1
-    s_small = 0.1
+    s_big = 0.05
+    s_small = 0.05
 
     def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
         self.initialize_fontsizes_big()
@@ -281,7 +281,7 @@ class EmbeddingPlotter3D(Formatter):
         self.u = torch.load("{path}/results/D{dim}/buyer_embeddings".format(path=self.results_path,dim=self.dim)).detach().numpy()
 
 
-    def make_scatter_plot_bi(self,d1=1,d2=2,d3=3,n_rot=4,save=False,show=False):
+    def make_scatter_plot_bi(self,d1=1,d2=2,d3=3,n_rot=3,save=False,show=False):
         # because we are plotting many plots use the small fontsizes
         self.initialize_fontsizes_small()
 
@@ -299,7 +299,7 @@ class EmbeddingPlotter3D(Formatter):
             ax = self.fig.add_subplot(n_rot,n_rot,i+1,projection='3d')
             ax.scatter(self.z[:,d1-1],self.z[:,d2-1],self.z[:,d3-1],s=self.s_big,label="NFTs")
             ax.scatter(self.q[:,d1-1],self.q[:,d2-1],self.q[:,d3-1],s=self.s_big,label="Traders")
-            ax.set_title("Rotation: " + str(i*360/(n_rot*n_rot)),weight="bold")
+            #ax.set_title("Rotation: " + str(i*360/(n_rot*n_rot)),weight="bold")
             ax.view_init(azim=i*360/(n_rot*n_rot))
             xlabel = "{c1} coordinate".format(c1=str(d1)+self.csuffix[d1])
             ylabel = "{c2} coordinate".format(c2=str(d2)+self.csuffix[d2])
@@ -308,7 +308,7 @@ class EmbeddingPlotter3D(Formatter):
             ax.set_ylabel(ylabel)
             ax.set_zlabel(zlabel)
 
-    def make_scatter_plot_tri(self,d1=1,d2=2,d3=3,n_rot=4,save=False,show=False):
+    def make_scatter_plot_tri(self,d1=1,d2=2,d3=3,n_rot=3,save=False,show=False):
         # because we are plotting many plots use the small fontsizes
         self.initialize_fontsizes_small()
 
@@ -327,7 +327,7 @@ class EmbeddingPlotter3D(Formatter):
             ax.scatter(self.l[:,d1-1],self.l[:,d2-1],self.l[:,d3-1],s=self.s_big,label="NFTs")
             ax.scatter(self.r[:,d1-1],self.r[:,d2-1],self.r[:,d3-1],s=self.s_big,label="Sellers")
             ax.scatter(self.u[:,d1-1],self.u[:,d2-1],self.u[:,d3-1],s=self.s_big,label="Buyers")
-            ax.set_title("Rotation: " + str(i*360/(n_rot*n_rot)),weight="bold")
+            #ax.set_title("Rotation: " + str(i*360/(n_rot*n_rot)),weight="bold")
             ax.view_init(azim=i*360/(n_rot*n_rot))
             xlabel = "{c1} coordinate".format(c1=str(d1)+self.csuffix[d1])
             ylabel = "{c2} coordinate".format(c2=str(d2)+self.csuffix[d2])
@@ -336,7 +336,7 @@ class EmbeddingPlotter3D(Formatter):
             ax.set_ylabel(ylabel)
             ax.set_zlabel(zlabel)
         
-    def make_scatter_plot(self,d1=1,d2=2,d3=3,n_rot=4,save=False,show=False):        
+    def make_scatter_plot(self,d1=1,d2=2,d3=3,n_rot=3,save=False,show=False):        
         if self.mtype == "bi":
             self.make_scatter_plot_bi(d1=d1,d2=d2,d3=d3,n_rot=n_rot)
         elif self.mtype == "tri":
@@ -355,7 +355,7 @@ class EmbeddingPlotter3D(Formatter):
         if show:
             plt.show()
     
-    def make_category_plot(self,d1=1,d2=2,d3=3,n_rot=4,save=False,show=False):
+    def make_category_plot(self,d1=1,d2=2,d3=3,n_rot=3,save=False,show=False):
         # because we are plotting many plots use the small fontsizes
         self.initialize_fontsizes_small()
 
@@ -378,8 +378,8 @@ class EmbeddingPlotter3D(Formatter):
             ax = self.fig.add_subplot(n_rot,n_rot,i+1,projection='3d')
             categories = np.loadtxt("{path}/sparse_c.txt".format(path=self.results_path),dtype='str')
             for category, color in self.colors.items():
-                ax.scatter(nft_embeddings[categories==category,d1-1],nft_embeddings[categories==category,d2-1],s=self.s_big,c=color,label=category)
-            ax.set_title("Rotation: " + str(i*360/(n_rot*n_rot)),weight="bold")
+                ax.scatter(nft_embeddings[categories==category,d1-1],nft_embeddings[categories==category,d2-1],nft_embeddings[categories==category,d3-1],s=self.s_big,c=color,label=category)
+            #ax.set_title("Rotation: " + str(i*360/(n_rot*n_rot)),weight="bold")
             ax.view_init(azim=i*360/(n_rot*n_rot))
             xlabel = "{c1} coordinate".format(c1=str(d1)+self.csuffix[d1])
             ylabel = "{c2} coordinate".format(c2=str(d2)+self.csuffix[d2])
@@ -405,21 +405,21 @@ class EmbeddingPlotter3D(Formatter):
 
 # choose data set to investigate
 blockchain="ETH"
-month="2021-02"
+month="2021-03"
 mtypes=["bi","tri"]
-dims=[2]
+dims=[3]
 
-for mtype in mtypes:
-    for dim in dims:
-        ep = EmbeddingPlotter2D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
-        ep.make_scatter_plot(save=True)
-        ep.make_category_plot(save=True)
+#for mtype in mtypes:
+#    for dim in dims:
+#        ep = EmbeddingPlotter2D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+#        ep.make_scatter_plot(save=True)
+#        ep.make_category_plot(save=True)
 #       ep.make_scatter_plot_all(save=True)
 #       ep.make_category_plot_all(save=True)
 
 
-#for mtype in mtypes:
-#    for dim in dims:
-#        ep = EmbeddingPlotter3D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
-#        #ep.make_scatter_plot(save=True)
-#        ep.make_category_plot(save=True)
+for mtype in mtypes:
+    for dim in dims:
+        ep = EmbeddingPlotter3D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+        #ep.make_scatter_plot(save=True)
+        ep.make_category_plot(save=True)

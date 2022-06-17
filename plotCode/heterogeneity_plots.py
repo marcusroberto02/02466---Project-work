@@ -5,7 +5,7 @@ import matplotlib as mpl
 
 
 #data = pd.read_csv("../data/toy.csv", index_col = 0)
-data = pd.read_csv("../data/Data_API.csv", low_memory=True)
+data = pd.read_csv("./data/Data_API.csv", low_memory=True)
 
 seller_count = data.groupby('Seller_address').size().values
 buyer_count = data.groupby('Buyer_address').size().values
@@ -14,6 +14,8 @@ nft_count = data.groupby('Unique_id_collection').size().values
 traders = np.append(data['Seller_address'], data['Buyer_address'])
 trad_df=pd.DataFrame(traders)
 trad_count = trad_df.groupby(0).size().values
+
+counts = [seller_count,buyer_count,]
 
 min_bin,max_bin = min(seller_count),max(seller_count)
 bins = np.logspace(np.log10(min_bin),np.log10(max_bin),30)

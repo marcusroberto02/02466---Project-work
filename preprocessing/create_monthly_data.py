@@ -10,22 +10,22 @@ from dateutil.relativedelta import relativedelta
 # main function
 def main():
     # define path for storing data
-    path = "./data/WAX/"
-    dataset_name = "Data_WAX.csv"
+    path = "./data/ETH/"
+    dataset_name = "Data_ETH.csv"
     
     # define start and end
-    start = datetime.datetime(2020, 6, 1)
+    start = datetime.datetime(2021, 3, 1)
     end = start + relativedelta(months =+ 1)
 
     # mark last month for storing data
-    last_month = datetime.datetime(2021, 5, 1)
+    last_month = datetime.datetime(2021, 4, 1)
     
     while start < last_month:
         dataset = pd.DataFrame()
         date = start.strftime("%Y-%m")
         i = 0
         # create path for specific month
-        store_path = path + date
+        store_path = path + date + "copy"
 
         min_date = datetime.datetime(2022, 10, 1)
         max_date = datetime.datetime(2014, 10, 1)
@@ -188,6 +188,10 @@ def create_sparse_data_tri(df,end,path):
     # split into train and test based on the date
     df_test = df[df["Datetime_updated"] >= end]
     df_train = df[df["Datetime_updated"] < end]
+
+    # for getting collections
+    df_col = df_train.groupby(["Unique_id_collection","Collection_cleaned"]).size().reset_index()
+    df_col["Collection_cleaned"].to_csv(path + '/tri/collections.txt',header=None,index=None)
 
     #Removes dublicate trades and increments counter
     df_train = df_train.groupby(["Unique_id_collection","Seller_address","Buyer_address","Category"]).size().reset_index()

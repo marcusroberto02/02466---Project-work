@@ -254,7 +254,6 @@ class ClassicationPlotter(Formatter):
             X = torch.load(self.results_path + "/results/D" + str(dim) + "/nft_embeddings").detach().numpy()
             y = np.loadtxt(self.results_path + "/sparse_c.txt",dtype="str").reshape(-1,1)
 
-<<<<<<< HEAD
             # split data into train and test
             X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,stratify=y,random_state=42)
 
@@ -271,18 +270,6 @@ class ClassicationPlotter(Formatter):
             
             if save or show:
                 plt.plot(n_neighbors,knn_scores,marker='o',mfc='black',markersize=self.markersize,linewidth=self.linewidth,label=f"Dim: {dim}")
-=======
-        for k in n_neighbors:
-            knn = KNeighborsClassifier(n_neighbors=k)
-            knn.fit(self.X_train, self.y_train)
-            knn_scores.append(knn.score(self.X_test, self.y_test))
-            print(k)
-        
-        if save or show:
-            self.fig = plt.figure(figsize=self.barplot_figsize)
-            plt.plot(n_neighbors,knn_scores,marker='o',mfc='red',markersize=self.markersize,linewidth=self.linewidth)
-            self.format_plot(title="K-nearest neighbors performance plot",subtitle=self.dataname,title_y=self.barplot_title_y,xlabel="Number of neighbors",ylabel="Accuracy")
->>>>>>> be46eb90905097ac6f2d675e8197417431f6074c
         
         plt.legend(loc="lower right")
         plt.ylim([0,1])
@@ -479,35 +466,19 @@ class ClassicationPlotter(Formatter):
         
 # choose data set to investigate
 blockchain="ETH"
-<<<<<<< HEAD
 month="2020-01"
 mtypes=["bi"]
 dims=[3]
 
-=======
-month="2021-03"
-mtypes=["bi","tri"]
-dims=[3]
-
-cp = ClassicationPlotter(blockchain="ETH",month=month,mtype="bi",dim=3)
-cp.get_mcNemar_test()
-
-
-#cp.make_dim_plot_all(save = True, show=True)
-"""
->>>>>>> be46eb90905097ac6f2d675e8197417431f6074c
 for mtype in mtypes:
     for dim in dims:
         #print(mtype,dim)
         cp = ClassicationPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
-<<<<<<< HEAD
         #cp.get_multinomial_results()
         #cp.get_k_nearest_neighbors_results(k=10)
         #cp.train_optimal_k_nearest_neighbors(save=True)
         #cp.make_dim_plot_all(k=10,save=True)
         #cp.print_class_distribution()
-=======
->>>>>>> be46eb90905097ac6f2d675e8197417431f6074c
         #cp.print_class_distribution()
         #cp.print_encoding_labels()
         #logreg = lm.LogisticRegression(solver='lbfgs', multi_class='multinomial', max_iter=1000, random_state=42)
@@ -524,14 +495,5 @@ for mtype in mtypes:
         cp.make_confusion_matrix("KNN",k=10,save=True)
         #cp.make_confusion_matrix("Optimal KNN",save=True)
         #cp.train_optimal_k_nearest_neighbors(save=True)
-<<<<<<< HEAD
         cp.print_baseline_model_performance()
         #cp.make_month_plot_all(k=10,save=True)
-=======
-        #cp.print_baseline_model_performance()
-"""
-
-
-
-
->>>>>>> be46eb90905097ac6f2d675e8197417431f6074c

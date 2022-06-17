@@ -34,23 +34,27 @@ print(len(df[df['Datetime_updated'] < date]) / len(df['Datetime_updated']) * 100
 print(len(df[df['Datetime_updated'] >= date]) / len(df['Datetime_updated']) * 100)
 """
 
-sparse_w_bi = np.loadtxt("./data/ETH/2021-03/bi/test/sparse_w.txt",dtype=int)
+sparse_w_bi = np.loadtxt("./data/ETH/2021-03/bi/train/sparse_w.txt",dtype=int)
 
 max_w_bi = np.max(sparse_w_bi)
 
 for i in range(1,max_w_bi+1):
-    print(f"{i}: {np.sum([sparse_w_bi == i])}")
+    count = np.sum([sparse_w_bi == i])
+    if count != 0:
+        print(f"{i}: {count}")
 
 print("\n")
 
-sparse_w_tri = np.loadtxt("./data/ETH/2021-03/tri/test/sparse_w.txt",dtype=int)
+sparse_w_tri = np.loadtxt("./data/ETH/2021-03/tri/train/sparse_w.txt",dtype=int)
 
 max_w_tri = np.max(sparse_w_tri)
 
 for i in range(1,max_w_tri+1):
-    print(f"{i}: {np.sum([sparse_w_tri == i])}")
+    count = np.sum([sparse_w_tri == i])
+    if count != 0:
+        print(f"{i}: {count}")
 
-sparse_i = np.loadtxt("./data/WAX/2020-07/bi/train/sparse_i.txt")
-sparse_j = np.loadtxt("./data/WAX/2020-07/bi/train/sparse_j.txt")
+#sparse_i = np.loadtxt("./data/WAX/2020-07/bi/train/sparse_i.txt")
+#sparse_j = np.loadtxt("./data/WAX/2020-07/bi/train/sparse_j.txt")
 
-print("hey")
+#print("hey")

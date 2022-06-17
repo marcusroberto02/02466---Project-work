@@ -24,7 +24,7 @@ class AttributePlotter(Formatter):
     markersize = 15
 
     # color for embeddings
-    colors = {'Games':'red','Art':'green','Collectible':'blue','Metaverse':'orange','Other':'purple','Utility':'brown'}
+    colors = {'Art':'green','Collectible':'blue','Games':'red','Metaverse':'orange','Other':'purple','Utility':'brown'}
     
     # name for the dataset
     namedict = {"API":"Full dataset","ETH":"Ethereum blockchain","WAX":"WAX blockchain"}

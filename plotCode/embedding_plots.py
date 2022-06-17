@@ -1,5 +1,5 @@
 from plot_formatting import Formatter
-from collections import defaultdict
+from collections import defaultdict, Counter
 import os
 import torch
 import matplotlib.pyplot as plt
@@ -19,7 +19,7 @@ class EmbeddingPlotter2D(Formatter):
     fig_title_y = (0.95,0.90) 
 
     # color for embeddings
-    colors = {'Games':'red','Art':'green','Collectible':'blue','Metaverse':'orange','Other':'purple','Utility':'brown'}
+    colors = {'Art':'green','Collectible':'blue','Games':'red','Metaverse':'orange','Other':'purple','Utility':'brown'}
     
     # empty embedding variables for bi
     z = None
@@ -231,6 +231,44 @@ class EmbeddingPlotter2D(Formatter):
             plt.savefig("{path}/category_plot_all_2D_{mtype}_D{dim:d}".format(path=self.store_path,mtype=self.mtype,dim=self.dim))
         if show:
             plt.show()
+
+    def make_collection_plot(self,d1=1,d2=2,category="Collectible",top=10,save=False,show=False):
+        if not (d1 in range(1,self.dim+1) and d2 in range(1,self.dim+1)):
+            raise Exception("Invalid choice of coordinate dimensions")
+
+        if self.mtype == "bi":
+            if self.z is None:
+                self.load_embeddings_bi()
+        elif self.mtype == "tri":
+            if self.l is None:
+                self.load_embeddings_tri()
+
+        # load correct nft embedding
+        nft_embeddings = self.z if self.mtype == "bi" else self.l
+
+        self.fig = plt.figure(figsize=self.figsize)
+
+        categories = np.loadtxt("{path}/sparse_c.txt".format(path=self.results_path),dtype='str')
+        nft_embeddings = nft_embeddings[categories==category]
+
+        # get 10 most abundant collections from collectible
+        collections = np.loadtxt("{path}/collections.txt".format(path=self.results_path),dtype='str')
+        collections = collections[categories==category]
+        cc = Counter(collections)
+        unique_collections = np.unique(collections)
+        counts = [cc[c] for c in unique_collections]
+        top_collections = unique_collections[np.argsort(counts)[-top:]]
+        for collection in top_collections:
+            plt.scatter(nft_embeddings[collections==collection,d1-1],nft_embeddings[collections==collection,d2-1],s=self.s_big,label=collection)
+        plt.legend(loc="upper right",markerscale=15)
+        xlabel = "{c1} coordinate".format(c1=str(d1)+self.csuffix[d1])
+        ylabel = "{c2} coordinate".format(c2=str(d2)+self.csuffix[d2])
+        self.format_plot(title=f"Top {top} collections plot for embeddings in 2D",subtitle=f"{self.dataname} - {category}",title_y=self.fig_title_y,xlabel=xlabel,ylabel=ylabel)
+
+        if save:
+            plt.savefig("{path}/{category}_top{top}_collection_plot_2D_{d1}_{d2}_{mtype}_D{dim:d}".format(path=self.store_path,category=category,top=top,d1=d1,d2=d2,mtype=self.mtype,dim=self.dim))
+        if show:
+            plt.show()
     
 
 # 3D
@@ -407,19 +445,23 @@ class EmbeddingPlotter3D(Formatter):
 blockchain="ETH"
 month="2021-03"
 mtypes=["bi","tri"]
-dims=[3]
+dims=[2]
 
-#for mtype in mtypes:
-#    for dim in dims:
-#        ep = EmbeddingPlotter2D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+categories = ["Art","Collectible","Games","Metaverse","Other","Utility"]
+
+for mtype in mtypes:
+    for dim in dims:
+        ep = EmbeddingPlotter2D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+        for category in categories:
+            ep.make_collection_plot(category=category,top=5,save=True)
 #        ep.make_scatter_plot(save=True)
 #        ep.make_category_plot(save=True)
 #       ep.make_scatter_plot_all(save=True)
 #       ep.make_category_plot_all(save=True)
 
 
-for mtype in mtypes:
-    for dim in dims:
-        ep = EmbeddingPlotter3D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+#for mtype in mtypes:
+#    for dim in dims:
+#        ep = EmbeddingPlotter3D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
         #ep.make_scatter_plot(save=True)
-        ep.make_category_plot(save=True)
+#        ep.make_category_plot(save=True)

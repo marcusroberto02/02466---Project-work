@@ -66,7 +66,7 @@ class LinkPredictionPlotter(Formatter):
                 plt.plot(*scores.T, lw=self.linewidth, label = f"{model}partite {dim}D")
 
         plt.ylim([0,1])
-        plt.legend(loc = "lower right")
+        plt.legend()
 
         title = f"{stype}-AUC score as a function of epochs" if stype != "max_accuracy" else f"Maximum accuracy as a function of epochs"
         ylabel = f"{stype}-AUC score" if stype != "max_accuracy" else "Accuracy"
@@ -89,7 +89,6 @@ class LinkPredictionPlotter(Formatter):
             plt.plot(*scores.T, color = color, lw = self.linewidth,label=f"Dim: {dim}")
 
         plt.ylim([0,1])
-
 
         title = f"{stype}-AUC score as a function of epochs" if stype != "max_accuracy" else f"Maximum accuracy as a function of epochs"
         ylabel = f"{stype}-AUC score" if stype != "max_accuracy" else "Accuracy"
@@ -148,14 +147,14 @@ class LinkPredictionPlotter(Formatter):
         if show:
             plt.show()
 
-    def make_score_month_plot(self, stype="ROC", save=False, show=False):
+    def make_score_month_plot(self, stype = "ROC",save = False, show = False):
         self.fig = plt.figure(figsize=self.figsize)
         
         dims = [2,3]
 
-        months = ["2020-01", "2020-02", "2020-03", "2020-04", "2020-05",
-                  "2020-06", "2020-07", "2020-08", "2020-09", "2020-10",
-                  "2020-11", "2020-12", "2021-01", "2021-02", "2021-03"]
+        months = ["2020-01","2020-02","2020-03","2020-04","2020-05",
+                  "2020-06","2020-07","2020-08","2020-09","2020-10",
+                  "2020-11","2020-12","2021-01","2021-02","2021-03"]
 
         for dim in dims:
             ROC_scores = []
@@ -170,7 +169,7 @@ class LinkPredictionPlotter(Formatter):
                     PR_scores.append(vals[2])
                     MA_scores.append(vals[4])
 
-                scores = ROC_scores
+            scores = ROC_scores
 
             if stype == "PR":
                 scores = PR_scores
@@ -225,16 +224,16 @@ class LinkPredictionPlotter(Formatter):
 
 
         plt.xticks(range(len(months)),months,rotation=45,fontsize=self.fontsize_ticks)
-        plt.legend(loc="lower right")
+        
         plt.ylim([0,1])
 
         title = f"{stype}-AUC score as a function of months" if stype != "max_accuracy" else f"Maximum accuracy as a function of months"
         ylabel = f"{stype}-AUC score" if stype != "max_accuracy" else "Accuracy"
         
-        self.format_plot(title=title, subtitle="Ethereum",
+        self.format_plot(title=title, subtitle="{mtype}partite model {dim}D".format(mtype=self.mtype.capitalize(),dim=self.dim),
                          title_y=self.fig_title_y,xlabel="Month",ylabel=ylabel)
         if save:
-            plt.savefig("{path}/{stype}_combined_month_plot_".format(path=self.store_path,stype=stype))
+            plt.savefig("{path}/{stype}_month_plot_{mtype}_D{dim:d}".format(path=self.store_path,stype=stype,mtype=self.mtype,dim=self.dim))
         if show:
             plt.show()
 

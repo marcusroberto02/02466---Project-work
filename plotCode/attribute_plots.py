@@ -1,5 +1,3 @@
-import gc
-
 from plot_formatting import Formatter
 import pandas as pd
 import numpy as np
@@ -8,6 +6,7 @@ import datetime
 import os
 import platform
 from dateutil.relativedelta import relativedelta
+import gc
 
 ###################
 # ATTRIBUTE PLOTS #
@@ -25,7 +24,7 @@ class AttributePlotter(Formatter):
     markersize = 15
 
     # color for embeddings
-    colors = {'Art':'green','Collectible':'blue','Games':'red','Metaverse':'orange','Other':'purple','Utility':'brown'}
+    colors = {'Games':'red','Art':'green','Collectible':'blue','Metaverse':'orange','Other':'purple','Utility':'brown'}
     
     # name for the dataset
     namedict = {"API":"Full dataset","ETH":"Ethereum blockchain","WAX":"WAX blockchain"}
@@ -36,15 +35,11 @@ class AttributePlotter(Formatter):
         self.dname = dname
         self.load_data()
         self.store_path = self.figurebase + "/AttributePlots"
-        self.fig = plt.figure(figsize=self.figsize)
         if not os.path.exists(self.store_path):
             os.makedirs(self.store_path)    
 
     def load_data(self):
-        if platform.system() == "Linux" or platform.system() == "Darwin":
-            ndots = ".."
-        else:
-            ndots = "."
+        ndots = "." if platform.system() != "Darwin" else ".."
         path = "{ndots}/data/Data_{dname}.csv".format(ndots=ndots,dname=self.dname)
         self.df = pd.read_csv(path, low_memory=True)
 

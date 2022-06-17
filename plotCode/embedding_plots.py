@@ -19,7 +19,7 @@ class EmbeddingPlotter2D(Formatter):
     fig_title_y = (0.95,0.90) 
 
     # color for embeddings
-    colors = {'Art':'green','Collectible':'blue','Games':'red','Metaverse':'orange','Other':'purple','Utility':'brown'}
+    colors = {'Games':'red','Art':'green','Collectible':'blue','Metaverse':'orange','Other':'purple','Utility':'brown'}
     
     # empty embedding variables for bi
     z = None

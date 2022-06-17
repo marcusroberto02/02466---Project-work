@@ -29,6 +29,9 @@ class DataFrame:
     # base path for storing figures
     figurebase = "../Figurer"
 
+    # base path for loading data
+    datapath = "../data"
+
     def __init__(self,blockchain="ETH",month="2021-02",mtype="bi",dim=2):
         self.blockchain = blockchain
         self.month = month

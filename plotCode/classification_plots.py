@@ -9,6 +9,8 @@ from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from sklearn.model_selection import train_test_split
 from collections import Counter
 import torch
+import scipy.stats
+import scipy.stats as st
 
 #######################
 # NODE CLASSIFICATION #
@@ -252,6 +254,7 @@ class ClassicationPlotter(Formatter):
             X = torch.load(self.results_path + "/results/D" + str(dim) + "/nft_embeddings").detach().numpy()
             y = np.loadtxt(self.results_path + "/sparse_c.txt",dtype="str").reshape(-1,1)
 
+<<<<<<< HEAD
             # split data into train and test
             X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,stratify=y,random_state=42)
 
@@ -268,6 +271,18 @@ class ClassicationPlotter(Formatter):
             
             if save or show:
                 plt.plot(n_neighbors,knn_scores,marker='o',mfc='black',markersize=self.markersize,linewidth=self.linewidth,label=f"Dim: {dim}")
+=======
+        for k in n_neighbors:
+            knn = KNeighborsClassifier(n_neighbors=k)
+            knn.fit(self.X_train, self.y_train)
+            knn_scores.append(knn.score(self.X_test, self.y_test))
+            print(k)
+        
+        if save or show:
+            self.fig = plt.figure(figsize=self.barplot_figsize)
+            plt.plot(n_neighbors,knn_scores,marker='o',mfc='red',markersize=self.markersize,linewidth=self.linewidth)
+            self.format_plot(title="K-nearest neighbors performance plot",subtitle=self.dataname,title_y=self.barplot_title_y,xlabel="Number of neighbors",ylabel="Accuracy")
+>>>>>>> be46eb90905097ac6f2d675e8197417431f6074c
         
         plt.legend(loc="lower right")
         plt.ylim([0,1])
@@ -335,22 +350,164 @@ class ClassicationPlotter(Formatter):
 
         print("Majority class voting accuracy: {accuracy:0.2f}%".format(accuracy=accuracy))
         print("Number of misclassifications for majority voting: {nwrong} out of {ntotal}".format(nwrong=misclassifications,ntotal=len(self.y_test)))
+    
+    def get_mcNemar_test(self):
+        alpha = 0.05
+
+        y = np.loadtxt(self.results_path + "/sparse_c.txt",dtype="str").reshape(-1,1)
+        # encode y
+        encoder = LabelEncoder()
+        y = encoder.fit_transform(y.ravel())
+
+        path = "/".join(self.results_path.split("/")[:-1])
+
+        X_bi = torch.load(path + "/bi" + "/results/D" + str(3) + "/nft_embeddings").detach().numpy()
+        X_tri = torch.load(path + "/tri" + "/results/D" + str(3) + "/nft_embeddings").detach().numpy()
+
+         # split data into train and test
+        X_train_bi, X_test_bi, y_train_bi, y_test_bi = train_test_split(X_bi, y, test_size=0.2, stratify=y, random_state=42)
+        X_train_tri, X_test_tri, y_train_tri, y_test_tri = train_test_split(X_tri, y, test_size=0.2, stratify=y,
+                                                                        random_state=42)
+
+        print("check of tran and test for bi and tri")
+        print(sum(y_train_bi==y_train_tri) == len(y_train_bi))
+
+        #### get KNN BI and TRI
+        knn_bi = KNeighborsClassifier(n_neighbors=10)
+        knn_bi.fit(X_train_bi, y_train_bi)
+        y_pred_knn_bi = knn_bi.predict(X_test_bi)
+
+        knn_tri = KNeighborsClassifier(n_neighbors=10)
+        knn_tri.fit(X_train_tri, y_train_tri)
+        y_pred_knn_tri = knn_tri.predict(X_test_tri)
+
+
+        #### get MLR BI and TRI
+        mlr_bi = lm.LogisticRegression(solver='lbfgs', multi_class='multinomial', max_iter=1000, random_state=42)
+        mlr_bi.fit(X_train_bi, y_train_bi)
+        y_pred_mlr_bi = mlr_bi.predict(X_test_bi)
+
+        mlr_tri = lm.LogisticRegression(solver='lbfgs', multi_class='multinomial', max_iter=1000, random_state=42)
+        mlr_tri.fit(X_train_tri, y_train_tri)
+        y_pred_mlr_tri = mlr_tri.predict(X_test_tri)
+
+        #### get baseline
+        majority_class = np.argmax([sum(y_train_bi==c) for c in np.unique(list(y_train_bi))])
+        y_pred_base = [majority_class] * len(y_test_bi)
+
+
+        # baseline vs. knn_bi
+        print("baseline vs. knn_bi")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_base, y_pred_knn_bi, alpha)
+
+        # baseline vs. knn_tri
+        print("baseline vs. knn_tri")
+        m1, CI1, p1 = self.mcnemar(y_test_tri, y_pred_base, y_pred_knn_tri, alpha)  
+      
+        # baseline vs. mlr_bi
+        print("baseline vs. mlr_bi")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_base, y_pred_mlr_bi, alpha)
+
+        # baseline vs. mlr_tri
+        print("baseline vs. mlr_tri")
+        m1, CI1, p1 = self.mcnemar(y_test_tri, y_pred_base, y_pred_mlr_tri, alpha)
+
+        # knn_bi vs. knn_tri
+        print("knn_bi vs. knn_tri")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_knn_bi, y_pred_knn_tri, alpha)
+
+        # knn_bi vs. mlr_bi
+        print("knn_bi vs. mlr_bi")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_knn_bi, y_pred_mlr_bi, alpha)
+
+        # knn_bi vs. mlr_tri 
+        print("knn_bi vs. mlr_tri")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_knn_bi, y_pred_mlr_tri, alpha)
+
+        # knn_tri vs. mlr_bi
+        print("knn_tri vs. mlr_bi")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_knn_tri, y_pred_mlr_bi, alpha)
+
+        # knn_tri vs. mlr_tri
+        print("knn_tri vs. mlr_tri")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_knn_tri, y_pred_mlr_tri, alpha)
+
+        # mlr_bi vs. mlr_tri
+        print("mlr_bi vs. mlr_tri")
+        m1, CI1, p1 = self.mcnemar(y_test_bi, y_pred_mlr_bi, y_pred_mlr_tri, alpha)
+
+       
+    
+    def mcnemar(self, y_true, yhatA, yhatB, alpha=0.05): 
+        # code taken from DTU course 02450 "Introduction to machine learning and data mining" code toolbox provided to students
+        # perform McNemars test
+        nn = np.zeros((2,2))
+        c1 = yhatA - y_true == 0
+        c2 = yhatB - y_true == 0
+
+        nn[0,0] = sum(c1 & c2)
+        nn[0,1] = sum(c1 & ~c2)
+        nn[1,0] = sum(~c1 & c2)
+        nn[1,1] = sum(~c1 & ~c2)
+
+        n = sum(nn.flat);
+        n12 = nn[0,1]
+        n21 = nn[1,0]
+
+        thetahat = (n12-n21)/n
+        Etheta = thetahat
+
+        Q = n**2 * (n+1) * (Etheta+1) * (1-Etheta) / ( (n*(n12+n21) - (n12-n21)**2) )
+
+        p = (Etheta + 1)*0.5 * (Q-1)
+        q = (1-Etheta)*0.5 * (Q-1)
+
+        CI = tuple(lm * 2 - 1 for lm in scipy.stats.beta.interval(1-alpha, a=p, b=q) )
+
+        p = 2*scipy.stats.binom.cdf(min([n12,n21]), n=n12+n21, p=0.5)
+        print("Result of McNemars test using alpha=", alpha)
+        print("Comparison matrix n")
+        print(nn)
+        if n12+n21 <= 10:
+            print("Warning, n12+n21 is low: n12+n21=",(n12+n21))
+
+        print("Approximate 1-alpha confidence interval of theta: [thetaL,thetaU] = ", CI)
+        print("p-value for two-sided test A and B have same accuracy (exact binomial test): p=", p)
+
+        return thetahat, CI, p
+
         
 # choose data set to investigate
 blockchain="ETH"
+<<<<<<< HEAD
 month="2020-01"
 mtypes=["bi"]
 dims=[3]
 
+=======
+month="2021-03"
+mtypes=["bi","tri"]
+dims=[3]
+
+cp = ClassicationPlotter(blockchain="ETH",month=month,mtype="bi",dim=3)
+cp.get_mcNemar_test()
+
+
+#cp.make_dim_plot_all(save = True, show=True)
+"""
+>>>>>>> be46eb90905097ac6f2d675e8197417431f6074c
 for mtype in mtypes:
     for dim in dims:
         #print(mtype,dim)
         cp = ClassicationPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+<<<<<<< HEAD
         #cp.get_multinomial_results()
         #cp.get_k_nearest_neighbors_results(k=10)
         #cp.train_optimal_k_nearest_neighbors(save=True)
         #cp.make_dim_plot_all(k=10,save=True)
         #cp.print_class_distribution()
+=======
+>>>>>>> be46eb90905097ac6f2d675e8197417431f6074c
         #cp.print_class_distribution()
         #cp.print_encoding_labels()
         #logreg = lm.LogisticRegression(solver='lbfgs', multi_class='multinomial', max_iter=1000, random_state=42)
@@ -363,9 +520,18 @@ for mtype in mtypes:
         #cp.make_barplot_test(save=True)
         #cp.make_model_dim_plot(modeltype="multinomial",save=True)
         #cp.make_model_dim_plot(modeltype="KNN",k=10,save=True)
-        #cp.make_confusion_matrix("multinomial",save=True)
-        #cp.make_confusion_matrix("KNN",k=10,save=True)
+        cp.make_confusion_matrix("multinomial",save=True)
+        cp.make_confusion_matrix("KNN",k=10,save=True)
         #cp.make_confusion_matrix("Optimal KNN",save=True)
         #cp.train_optimal_k_nearest_neighbors(save=True)
+<<<<<<< HEAD
         cp.print_baseline_model_performance()
         #cp.make_month_plot_all(k=10,save=True)
+=======
+        #cp.print_baseline_model_performance()
+"""
+
+
+
+
+>>>>>>> be46eb90905097ac6f2d675e8197417431f6074c

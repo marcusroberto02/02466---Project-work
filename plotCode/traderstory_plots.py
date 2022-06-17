@@ -66,7 +66,7 @@ class TraderStoryPlotter(Formatter):
 
     # the following function is heavily inspired by the matplotlib documentation
     # https://matplotlib.org/stable/gallery/lines_bars_and_markers/scatter_hist.html
-    def scatter_hist(self,x, y, ax, ax_histx, ax_histy,normalize=False,remove_origin=None):
+    def scatter_hist(self,x, y, ax, ax_histx, ax_histy,normalize=False,remove_origin=None, colours=None):
         # no labels
         ax_histx.tick_params(axis="x", labelbottom=False)
         ax_histy.tick_params(axis="y", labelleft=False)
@@ -79,7 +79,8 @@ class TraderStoryPlotter(Formatter):
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         # the scatter plot:
-        ax.scatter(x, y)
+        #ax.scatter(x, y, c=colours, cmap="viridis")
+        image = ax.scatter(x, y, c=colours, cmap="plasma")
 
         # OBS 
         # HER SKAL MAN MANUELT UNDERSØGE HVILKE INDEKSER DER FJERNER 0'erne
@@ -110,6 +111,9 @@ class TraderStoryPlotter(Formatter):
         bins = np.arange(-lim, lim + binwidth, binwidth)
         ax_histx.hist(x, bins=bins)
         ax_histy.hist(y, bins=bins, orientation='horizontal')
+        plt.colorbar(image, ax=ax, label="Distances")
+        plt.tight_layout()
+        plt.subplots_adjust(wspace=0.5, hspace=0.5)
 
     def make_bias_distribution_plot(self,normalize=False,remove_origin=None,save=False,show=False):
         if self.seller_biases is None or self.buyer_biases is None:
@@ -131,9 +135,12 @@ class TraderStoryPlotter(Formatter):
         seller_ids = df["ei_seller"]
         buyer_ids = df['ei_buyer']
 
+
+
         # make the scatterplot
         sb = self.seller_biases[seller_ids]
         bb = self.buyer_biases[buyer_ids]
+
         if normalize:
             sb = (sb - np.mean(sb)) / np.std(sb)
             bb = (bb - np.mean(bb)) / np.std(bb)
@@ -149,6 +156,88 @@ class TraderStoryPlotter(Formatter):
                 plt.savefig("{path}/bias_distribution_plot_{mtype}_D{dim:d}".format(path=self.store_path,mtype=self.mtype,dim=self.dim))
         if show:
             plt.show()
+    def make_distances_biases_plot(self, save=False, show=False, normalize=False, remove_origin=None):
+        if self.seller_biases is None or self.buyer_biases is None:
+            self.load_biases()
+
+        self.fig = plt.figure(figsize=self.figsize)
+
+
+        gs = self.fig.add_gridspec(2, 2, width_ratios=(7, 2), height_ratios=(2, 7),
+                                   left=0.1, right=0.9, bottom=0.1, top=0.9,
+                                   wspace=0.05, hspace=0.05)
+
+        ax = self.fig.add_subplot(gs[1, 0])
+        ax.set_xlabel("Buyer Biases")
+        ax.set_ylabel("Seller Biases")
+        ax_histx = self.fig.add_subplot(gs[0, 0], sharex=ax)
+        ax_histy = self.fig.add_subplot(gs[1, 1], sharey=ax)
+
+        ax_histy.set_ylabel("Buyer biases", weight="bold", rotation=-90, rotation_mode='default', y=0.4, x=-1.5)
+        ax_histy.yaxis.set_label_coords(-.1, 0.3)
+        ax_histx.set_xlabel("Seller_biases", weight="bold")
+
+        if self.r is None or self.u is None:
+            self.load_embeddings()
+
+        # only include traders that act as both sellers and buyers
+        df = pd.read_csv(self.results_path + "/sellerbuyeridtable.csv")
+        seller_ids = df["ei_seller"]
+        buyer_ids = df['ei_buyer']
+
+        # get embeddings
+        se = self.r[seller_ids]
+        be = self.u[buyer_ids]
+
+
+        # get euclidean distances
+        distances = [np.linalg.norm(s-b) for (s,b) in zip(se,be)]
+        distances=np.array(distances)
+
+        #sorted distances
+        sequence = np.argsort(distances)
+        distances = distances[sequence]
+        #distances = distances[np.where(distances>30)]
+        #Normalized distances
+       # distances = (distances - np.mean(distances))/np.std(distances)
+        # only include traders that act as both sellers and buyers
+        df = pd.read_csv(self.results_path + "/sellerbuyeridtable.csv")
+        seller_ids = df["ei_seller"]
+        buyer_ids = df['ei_buyer']
+
+        # make the scatterplot
+        sb = self.seller_biases[seller_ids]
+        bb = self.buyer_biases[buyer_ids]
+
+        # sort
+        sb = sb[sequence]
+        bb = bb[sequence]
+
+
+        if normalize:
+            sb = (sb - np.mean(sb)) / np.std(sb)
+            bb = (bb - np.mean(bb)) / np.std(bb)
+
+
+        #self.fig = plt.figure(figsize=self.figsize)
+        self.scatter_hist(sb, bb, ax, ax_histx, ax_histy, normalize=normalize, remove_origin=remove_origin, colours=distances)
+        title = "Seller Buyer bias and distance distribution"
+        #title += " - Normalized" if normalize else ""
+        self.set_titles_3D(title=title, subtitle=self.dataname, title_y=self.fig_title_y)
+
+        if save:
+            plt.savefig(
+                "{path}/distance_bias_scatter{mtype}_D{dim:d}".format(path=self.store_path, mtype=self.mtype,
+                                                                            dim=self.dim))
+        if show:
+            plt.show()
+
+
+
+
+
+
+
 
     def make_only_sellers_bias_distribution_plot(self,save=False,show=False):
         # plot distribution of distances between between seller and buyer positions
@@ -227,9 +316,12 @@ class TraderStoryPlotter(Formatter):
         # get euclidean distances
         distances = [np.linalg.norm(s-b) for (s,b) in zip(se,be)]
 
-        plt.hist(distances,bins=200,density=True)
+
+
 
         # PDF
+        distances = np.log(distances)
+        plt.hist(distances, bins=200, density=True)
         shape, loc, scale = lognorm.fit(distances)
         xmin, xmax = plt.xlim()
         x = np.linspace(xmin, xmax, 100)
@@ -340,22 +432,22 @@ class TraderStoryPlotter(Formatter):
 
 # choose data set to investigate
 blockchain="ETH"
-month="2021-02"
+month="2021-03"
 mtype="tri"
-dims=[2]
+dims=[3]
 
 for dim in dims:
     tsp = TraderStoryPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
     #tsp.degree_heterogeneity_plot(show=True)
-    tsp.make_bias_distribution_plot(remove_origin=(3,3),save=True, show =True)
+    #tsp.make_bias_distribution_plot(remove_origin=(3,3),save=True, show =True)
     #tsp.make_bias_distribution_plot(normalize=True,remove_origin=(3,3),save=True)
     #tsp.make_only_sellers_bias_distribution_plot(save=True)
     #tsp.make_only_buyers_bias_distribution_plot(save=True)
-    #tsp.make_distance_distribution_plot(save=True)
+    tsp.make_distance_distribution_plot(save=True, show=True)
     #tsp.make_trader_story_plot_2D(save=True)
     #tsp.make_trader_story_plot_2D(story="most_frequent_seller",save=True)
     #tsp.make_trader_story_plot_2D(story="most_frequent_buyer",save=True)
     #tsp.make_trader_story_plot_2D(story="most_active_trader",save=True)
     #tsp.make_trader_story_plot_2D(story="custom_trader",min_sales=100,min_purchases=100,save=True)
-
+    #tsp.make_distances_biases_plot(show=True, save=True, normalize = True)
     

@@ -163,7 +163,7 @@ class EmbeddingPlotter2D(Formatter):
         if show:
             plt.show()
 
-    def make_category_plot(self,d1=1,d2=2,save=False,show=False):
+    def make_category_nft_plot(self,d1=1,d2=2,save=False,show=False):
         if not (d1 in range(1,self.dim+1) and d2 in range(1,self.dim+1)):
             raise Exception("Invalid choice of coordinate dimensions")
 
@@ -185,10 +185,10 @@ class EmbeddingPlotter2D(Formatter):
         plt.legend(loc="upper right",markerscale=15)
         xlabel = "{c1} coordinate".format(c1=str(d1)+self.csuffix[d1])
         ylabel = "{c2} coordinate".format(c2=str(d2)+self.csuffix[d2])
-        self.format_plot(title="Category plot for embeddings in 2D",subtitle=self.dataname,title_y=self.fig_title_y,xlabel=xlabel,ylabel=ylabel)
+        self.format_plot(title="Category plot for the NFT embeddings in 2D",subtitle=self.dataname,title_y=self.fig_title_y,xlabel=xlabel,ylabel=ylabel)
 
         if save:
-            plt.savefig("{path}/category_plot_2D_{d1}_{d2}_{mtype}_D{dim:d}".format(path=self.store_path,d1=d1,d2=d2,mtype=self.mtype,dim=self.dim))
+            plt.savefig("{path}/category_plot_nfts_2D_{d1}_{d2}_{mtype}_D{dim:d}".format(path=self.store_path,d1=d1,d2=d2,mtype=self.mtype,dim=self.dim))
         if show:
             plt.show()
 
@@ -263,13 +263,250 @@ class EmbeddingPlotter2D(Formatter):
         plt.legend(loc="upper right",markerscale=15)
         xlabel = "{c1} coordinate".format(c1=str(d1)+self.csuffix[d1])
         ylabel = "{c2} coordinate".format(c2=str(d2)+self.csuffix[d2])
-        self.format_plot(title=f"Top {top} collections plot for embeddings in 2D",subtitle=f"{self.dataname} - {category}",title_y=self.fig_title_y,xlabel=xlabel,ylabel=ylabel)
+        self.format_plot(title=f"Top {top} collections plot for the NFT embeddings in 2D",subtitle=f"{self.dataname} - {category}",title_y=self.fig_title_y,xlabel=xlabel,ylabel=ylabel)
 
         if save:
             plt.savefig("{path}/{category}_top{top}_collection_plot_2D_{d1}_{d2}_{mtype}_D{dim:d}".format(path=self.store_path,category=category,top=top,d1=d1,d2=d2,mtype=self.mtype,dim=self.dim))
         if show:
             plt.show()
     
+    def make_category_trader_plot_bi(self,d1=1,d2=2,save=False,show=False):
+        if not (d1 in range(1,self.dim+1) and d2 in range(1,self.dim+1)):
+            raise Exception("Invalid choice of coordinate dimensions")
+
+        if self.q is None:
+            self.load_embeddings_bi()
+        
+        self.fig = plt.figure(figsize=self.figsize)
+
+        # load sparse matrices to represent each trade
+        sparse_i = np.loadtxt(self.results_path + "/train/sparse_i.txt",dtype=int)
+        sparse_j = np.loadtxt(self.results_path + "/train/sparse_j.txt",dtype=int)
+
+        traders = np.unique(sparse_j)
+
+        trader_embeddings = self.q
+
+        print(len(traders))
+
+        categories = np.loadtxt("{path}/sparse_c.txt".format(path=self.results_path),dtype='str')
+        top_category = []
+
+        for i,t in enumerate(traders):
+            if i % 1000 == 0:
+                print(i)
+            nfts = sparse_i[sparse_j == t]
+            cc = Counter([categories[nft] for nft in nfts])
+            top_category.append(max(cc))
+
+        top_category = np.array(top_category)
+
+        for category, color in self.colors.items():
+            # boolean array that keeps track if the jth trader has traded the most in given category
+            plt.scatter(trader_embeddings[top_category==category,d1-1],trader_embeddings[top_category==category,d2-1],s=self.s_big,c=color,label=category)
+        plt.legend(loc="upper right",markerscale=15)
+        xlabel = "{c1} coordinate".format(c1=str(d1)+self.csuffix[d1])
+        ylabel = "{c2} coordinate".format(c2=str(d2)+self.csuffix[d2])
+        self.format_plot(title="Category plot for trader embeddings in 2D",subtitle=self.dataname,title_y=self.fig_title_y,xlabel=xlabel,ylabel=ylabel)
+
+        if save:
+            plt.savefig("{path}/category_plot_trader_2D_{d1}_{d2}_{mtype}_D{dim:d}".format(path=self.store_path,d1=d1,d2=d2,mtype=self.mtype,dim=self.dim))
+        if show:
+            plt.show()
+
+    def make_category_trader_plot_tri(self,d1=1,d2=2,save=False,show=False):
+        if not (d1 in range(1,self.dim+1) and d2 in range(1,self.dim+1)):
+            raise Exception("Invalid choice of coordinate dimensions")
+
+        if self.r is None or self.u is None:
+            self.load_embeddings_tri()
+        
+        self.fig = plt.figure(figsize=self.figsize)
+
+        # load sparse matrices to represent each trade
+        sparse_i = np.loadtxt(self.results_path + "/train/sparse_i.txt",dtype=int)
+        sparse_j = np.loadtxt(self.results_path + "/train/sparse_j.txt",dtype=int)
+        sparse_k = np.loadtxt(self.results_path + "/train/sparse_k.txt",dtype=int)
+
+        sellers = np.unique(sparse_j)
+        buyers = np.unique(sparse_k)
+
+        seller_embeddings = self.r
+        buyer_embeddings = self.u
+
+        categories = np.loadtxt("{path}/sparse_c.txt".format(path=self.results_path),dtype='str')
+
+        print(len(sellers))
+        
+        top_category_seller = []
+
+        for i,s in enumerate(sellers):
+            if i % 1000 == 0:
+                print(i)
+            nfts = sparse_i[sparse_j == s]
+            cc = Counter([categories[nft] for nft in nfts])
+            top_category_seller.append(max(cc))
+
+        top_category_seller = np.array(top_category_seller)
+
+        print(len(buyers))
+        
+        top_category_buyer = []
+
+        for i,b in enumerate(buyers):
+            if i % 1000 == 0:
+                print(i)
+            nfts = sparse_i[sparse_k == b]
+            cc = Counter([categories[nft] for nft in nfts])
+            top_category_buyer.append(max(cc))
+
+        top_category_buyer = np.array(top_category_buyer)
+
+        for category, color in self.colors.items():
+            # boolean array that keeps track if the jth trader has traded the most in given category
+            plt.scatter(seller_embeddings[top_category_seller==category,d1-1],seller_embeddings[top_category_seller==category,d2-1],s=self.s_big,c=color,label=category)
+            plt.scatter(buyer_embeddings[top_category_buyer==category,d1-1],buyer_embeddings[top_category_buyer==category,d2-1],s=self.s_big,c=color,label='_nolegend_')
+        plt.legend(loc="upper right",markerscale=15)
+        xlabel = "{c1} coordinate".format(c1=str(d1)+self.csuffix[d1])
+        ylabel = "{c2} coordinate".format(c2=str(d2)+self.csuffix[d2])
+        self.format_plot(title="Category plot for trader embeddings in 2D",subtitle=self.dataname,title_y=self.fig_title_y,xlabel=xlabel,ylabel=ylabel)
+
+        if save:
+            plt.savefig("{path}/category_plot_trader_2D_{d1}_{d2}_{mtype}_D{dim:d}".format(path=self.store_path,d1=d1,d2=d2,mtype=self.mtype,dim=self.dim))
+        if show:
+            plt.show()
+
+    def print_average_count_from_origin(self,stepsize=5):
+        # print the average number of trades an nft who is
+        # at least mindist away from the origin and at most maxdist
+        # away from the origin
+        if self.mtype == "bi":
+            if self.z is None or self.q is None:
+                self.load_embeddings_bi()
+            # load sparse matrices to represent each trade
+            sparse_i = np.loadtxt(self.results_path + "/train/sparse_i.txt",dtype=int)
+            sparse_j = np.loadtxt(self.results_path + "/train/sparse_j.txt",dtype=int)
+            sparse_w = np.loadtxt(self.results_path + "/train/sparse_w.txt",dtype=int)
+            nft_dists = [np.linalg.norm(v) for v in self.z]
+            trader_dists = [np.linalg.norm(v) for v in self.q]
+
+            count = 0
+            nums = 0
+        
+            mindist = 0
+            
+            print(f"\nNFT results: {len(nft_dists)}\n")
+
+            for ni in np.argsort(nft_dists):
+                dist = nft_dists[ni]
+                if dist >= mindist and dist <= mindist + stepsize:
+                    count += sum(sparse_w[sparse_i == ni])
+                    nums += 1
+                else:
+                    if nums != 0:
+                        print(f"\n{mindist}-{mindist+stepsize}: {count / nums} and {nums}\n")
+                    while dist > mindist + stepsize:
+                        mindist += stepsize
+                    count = sum(sparse_w[sparse_i == ni])
+                    nums = 1
+
+            count = 0
+            nums = 0
+        
+            mindist = 0
+            
+            print(f"\nTrader results: {len(trader_dists)}\n")
+
+            for ti in np.argsort(trader_dists):
+                dist = trader_dists[ti]
+                if dist >= mindist and dist <= mindist + stepsize:
+                    count += sum(sparse_w[sparse_j == ti])
+                    nums += 1
+                else:
+                    if nums != 0:
+                        print(f"\n{mindist}-{mindist+stepsize}: {count / nums} and {nums}\n")
+                    while dist > mindist + stepsize:
+                        mindist += stepsize
+                    count = sum(sparse_w[sparse_j == ti])
+                    nums = 1
+            
+            
+
+        elif self.mtype == "tri":
+            if self.l is None or self.r is None or self.u is None:
+                self.load_embeddings_tri()
+            
+            # load sparse matrices to represent each trade
+            sparse_i = np.loadtxt(self.results_path + "/train/sparse_i.txt",dtype=int)
+            sparse_j = np.loadtxt(self.results_path + "/train/sparse_j.txt",dtype=int)
+            sparse_k = np.loadtxt(self.results_path + "/train/sparse_k.txt",dtype=int)
+            sparse_w = np.loadtxt(self.results_path + "/train/sparse_w.txt",dtype=int)
+            nft_dists = [np.linalg.norm(v) for v in self.l]
+            seller_dists = [np.linalg.norm(v) for v in self.r]
+            buyer_dists = [np.linalg.norm(v) for v in self.u]
+
+            count = 0
+            nums = 0
+        
+            mindist = 0
+            
+            print(f"\nNFT results: {len(nft_dists)}\n")
+
+            for ni in np.argsort(nft_dists):
+                dist = nft_dists[ni]
+                if dist >= mindist and dist <= mindist + stepsize:
+                    count += sum(sparse_w[sparse_i == ni])
+                    nums += 1
+                else:
+                    if nums != 0:
+                        print(f"\n{mindist}-{mindist+stepsize}: {count / nums} and {nums}\n")
+                    while dist > mindist + stepsize:
+                        mindist += stepsize
+                    count = sum(sparse_w[sparse_i == ni])
+                    nums = 1
+
+            count = 0
+            nums = 0
+        
+            mindist = 0
+            
+            print(f"\nSeller results: {len(seller_dists)}\n")
+
+            for si in np.argsort(seller_dists):
+                dist = seller_dists[si]
+                if dist >= mindist and dist <= mindist + stepsize:
+                    count += sum(sparse_w[sparse_j == si])
+                    nums += 1
+                else:
+                    if nums != 0:
+                        print(f"\n{mindist}-{mindist+stepsize}: {count / nums} and {nums}\n")
+                    while dist > mindist + stepsize:
+                        mindist += stepsize
+                    count = sum(sparse_w[sparse_j == si])
+                    nums = 1
+
+            count = 0
+            nums = 0
+        
+            mindist = 0
+            
+            print(f"\nBuyer results: {len(buyer_dists)}\n")
+
+            for bi in np.argsort(buyer_dists):
+                dist = buyer_dists[bi]
+                if dist >= mindist and dist <= mindist + stepsize:
+                    count += sum(sparse_w[sparse_k == bi])
+                    nums += 1
+                else:
+                    if nums != 0:
+                        print(f"\n{mindist}-{mindist+stepsize}: {count / nums} and {nums}\n")
+                    while dist > mindist + stepsize:
+                        mindist += stepsize
+                    count = sum(sparse_w[sparse_k == bi])
+                    nums = 1
+
+        
+
 
 # 3D
 
@@ -432,12 +669,142 @@ class EmbeddingPlotter3D(Formatter):
 
         # go back to big fontsize
         self.initialize_fontsizes_big()
-        self.set_titles_3D(title="Category plot for embeddings in 3D",subtitle=self.dataname,title_y=self.fig_title_y)
+        self.set_titles_3D(title="Category plot for the NFT embeddings in 3D",subtitle=self.dataname,title_y=self.fig_title_y)
         
         if save:
-            plt.savefig("{path}/category_plot_3D_{d1}_{d2}_{d3}_{mtype}_D{dim:d}".format(path=self.store_path,d1=d1,d2=d2,d3=d3,mtype=self.mtype,dim=self.dim))
+            plt.savefig("{path}/category_plot_nfts_3D_{d1}_{d2}_{d3}_{mtype}_D{dim:d}".format(path=self.store_path,d1=d1,d2=d2,d3=d3,mtype=self.mtype,dim=self.dim))
         if show:
             plt.show()
+    
+    def print_average_count_from_origin(self,stepsize=5):
+        # print the average number of trades an nft who is
+        # at least mindist away from the origin and at most maxdist
+        # away from the origin
+        if self.mtype == "bi":
+            if self.z is None or self.q is None:
+                self.load_embeddings_bi()
+            # load sparse matrices to represent each trade
+            sparse_i = np.loadtxt(self.results_path + "/train/sparse_i.txt",dtype=int)
+            sparse_j = np.loadtxt(self.results_path + "/train/sparse_j.txt",dtype=int)
+            sparse_w = np.loadtxt(self.results_path + "/train/sparse_w.txt",dtype=int)
+            nft_dists = [np.linalg.norm(v) for v in self.z]
+            trader_dists = [np.linalg.norm(v) for v in self.q]
+
+            count = 0
+            nums = 0
+        
+            mindist = 0
+            
+            print(f"\nNFT results: {len(nft_dists)}\n")
+
+            for ni in np.argsort(nft_dists):
+                dist = nft_dists[ni]
+                if dist >= mindist and dist <= mindist + stepsize:
+                    count += sum(sparse_w[sparse_i == ni])
+                    nums += 1
+                else:
+                    if nums != 0:
+                        print(f"\n{mindist}-{mindist+stepsize}: {count / nums} and {nums}\n")
+                    while dist > mindist + stepsize:
+                        mindist += stepsize
+                    count = sum(sparse_w[sparse_i == ni])
+                    nums = 1
+
+            count = 0
+            nums = 0
+        
+            mindist = 0
+            
+            print(f"\nTrader results: {len(trader_dists)}\n")
+
+            for ti in np.argsort(trader_dists):
+                dist = trader_dists[ti]
+                if dist >= mindist and dist <= mindist + stepsize:
+                    count += sum(sparse_w[sparse_j == ti])
+                    nums += 1
+                else:
+                    if nums != 0:
+                        print(f"\n{mindist}-{mindist+stepsize}: {count / nums} and {nums}\n")
+                    while dist > mindist + stepsize:
+                        mindist += stepsize
+                    count = sum(sparse_w[sparse_j == ti])
+                    nums = 1
+            
+            
+
+        elif self.mtype == "tri":
+            if self.l is None or self.r is None or self.u is None:
+                self.load_embeddings_tri()
+            
+            # load sparse matrices to represent each trade
+            sparse_i = np.loadtxt(self.results_path + "/train/sparse_i.txt",dtype=int)
+            sparse_j = np.loadtxt(self.results_path + "/train/sparse_j.txt",dtype=int)
+            sparse_k = np.loadtxt(self.results_path + "/train/sparse_k.txt",dtype=int)
+            sparse_w = np.loadtxt(self.results_path + "/train/sparse_w.txt",dtype=int)
+            nft_dists = [np.linalg.norm(v) for v in self.l]
+            seller_dists = [np.linalg.norm(v) for v in self.r]
+            buyer_dists = [np.linalg.norm(v) for v in self.u]
+
+            count = 0
+            nums = 0
+        
+            mindist = 0
+            
+            print(f"\nNFT results: {len(nft_dists)}\n")
+
+            for ni in np.argsort(nft_dists):
+                dist = nft_dists[ni]
+                if dist >= mindist and dist <= mindist + stepsize:
+                    count += sum(sparse_w[sparse_i == ni])
+                    nums += 1
+                else:
+                    if nums != 0:
+                        print(f"\n{mindist}-{mindist+stepsize}: {count / nums} and {nums}\n")
+                    while dist > mindist + stepsize:
+                        mindist += stepsize
+                    count = sum(sparse_w[sparse_i == ni])
+                    nums = 1
+
+            count = 0
+            nums = 0
+        
+            mindist = 0
+            
+            print(f"\nSeller results: {len(seller_dists)}\n")
+
+            for si in np.argsort(seller_dists):
+                dist = seller_dists[si]
+                if dist >= mindist and dist <= mindist + stepsize:
+                    count += sum(sparse_w[sparse_j == si])
+                    nums += 1
+                else:
+                    if nums != 0:
+                        print(f"\n{mindist}-{mindist+stepsize}: {count / nums} and {nums}\n")
+                    while dist > mindist + stepsize:
+                        mindist += stepsize
+                    count = sum(sparse_w[sparse_j == si])
+                    nums = 1
+
+            count = 0
+            nums = 0
+        
+            mindist = 0
+            
+            print(f"\nBuyer results: {len(buyer_dists)}\n")
+
+            for bi in np.argsort(buyer_dists):
+                dist = buyer_dists[bi]
+                if dist >= mindist and dist <= mindist + stepsize:
+                    count += sum(sparse_w[sparse_k == bi])
+                    nums += 1
+                else:
+                    if nums != 0:
+                        print(f"\n{mindist}-{mindist+stepsize}: {count / nums} and {nums}\n")
+                    while dist > mindist + stepsize:
+                        mindist += stepsize
+                    count = sum(sparse_w[sparse_k == bi])
+                    nums = 1
+
 
 
 
@@ -445,23 +812,30 @@ class EmbeddingPlotter3D(Formatter):
 blockchain="ETH"
 month="2021-03"
 mtypes=["bi","tri"]
-dims=[2]
+dims=[3]
 
 categories = ["Art","Collectible","Games","Metaverse","Other","Utility"]
 
-for mtype in mtypes:
-    for dim in dims:
-        ep = EmbeddingPlotter2D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
-        for category in categories:
-            ep.make_collection_plot(category=category,top=5,save=True)
-#        ep.make_scatter_plot(save=True)
-#        ep.make_category_plot(save=True)
+#for mtype in mtypes:
+#    for dim in dims:
+#        ep = EmbeddingPlotter2D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+        #for category in categories:
+        #    ep.make_collection_plot(category=category,top=5,save=True)
+#        ep.print_average_count_from_origin(stepsize=5) 
+        #if mtype == "bi":
+        #   ep.make_category_trader_plot_bi(save=True)
+        #elif mtype == "tri":
+        #    ep.make_category_trader_plot_tri(save=True)
+#       ep.make_scatter_plot(save=True)
+        #ep.make_category_nft_plot(save=True)
 #       ep.make_scatter_plot_all(save=True)
 #       ep.make_category_plot_all(save=True)
 
 
-#for mtype in mtypes:
-#    for dim in dims:
-#        ep = EmbeddingPlotter3D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+for mtype in mtypes:
+    for dim in dims:
+        ep = EmbeddingPlotter3D(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
         #ep.make_scatter_plot(save=True)
-#        ep.make_category_plot(save=True)
+        #ep.make_category_plot(save=True)
+        ep.print_average_count_from_origin()
+

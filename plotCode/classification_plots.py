@@ -20,6 +20,9 @@ class ClassicationPlotter(Formatter):
     # size of bar plots
     barplot_figsize = (20,20)
 
+    # very big size
+    bigplot_figsize = (23,23)
+
     # y position of title and subtitle barplot
     barplot_title_y = (0.95,0.90) 
 
@@ -202,11 +205,12 @@ class ClassicationPlotter(Formatter):
         months = ["2020-01", "2020-02", "2020-03", "2020-04", "2020-05",
                   "2020-06", "2020-07", "2020-08", "2020-09", "2020-10",
                   "2020-11", "2020-12", "2021-01", "2021-02", "2021-03"]
-        
+
         for mtype in mtypes:
             for dim in dims:
                 reg_scores = []
                 knn_scores = []
+                baseline_scores = []
                 for month in months:
                     print(month,mtype,dim)
                     path = self.resultsbase + f"/{self.blockchain}/{month}"
@@ -225,12 +229,22 @@ class ClassicationPlotter(Formatter):
                     knn = KNeighborsClassifier(n_neighbors=k)
                     reg_scores.append(lr.fit(X_train,y_train).score(X_test,y_test))
                     knn_scores.append(knn.fit(X_train,y_train).score(X_test,y_test))
+
+                    if mtype == "tri" and dim == 3:
+                        cc = Counter(y_train)
+                        majority_class = np.argmax([cc[c] for c in range(6)])
+                        y_pred = [majority_class] * len(y_test)
+
+                        accuracy = np.sum(y_pred == y_test) / len(y_test)
+                        baseline_scores.append(accuracy)
                     
                 plt.plot(range(len(months)), reg_scores, marker='o', mfc='black', markersize=self.markersize, lw=self.linewidth, label = f"{mtype.capitalize()}partite {dim}D - MLR")
                 plt.plot(range(len(months)), knn_scores, marker='o', mfc='black', markersize=self.markersize, lw=self.linewidth, label = f"{mtype.capitalize()}partite {dim}D - KNN (K={k})")
-        
+                if mtype == "tri" and dim == 3:
+                    plt.plot(range(len(months)), baseline_scores, marker='o', mfc='black', markersize=self.markersize, lw=self.linewidth, label = f"Baseline model")
+
         plt.xticks(range(len(months)), months, rotation=45, fontsize=self.fontsize_ticks)
-        plt.legend(loc="lower right")
+        plt.legend(loc="lower left")
         plt.ylim([0, 1])
         self.format_plot(title = "Model performance as a function of months",subtitle = "Ethereum blockchain",title_y=self.barplot_title_y,xlabel="Month", ylabel = "Accuracy")
         
@@ -338,6 +352,36 @@ class ClassicationPlotter(Formatter):
         print("Majority class voting accuracy: {accuracy:0.2f}%".format(accuracy=accuracy))
         print("Number of misclassifications for majority voting: {nwrong} out of {ntotal}".format(nwrong=misclassifications,ntotal=len(self.y_test)))
     
+
+    def make_baseline_model_performance_month_plot(self,save=False,show=False):
+        self.fig = plt.figure(figsize=self.bigplot_figsize)
+        months = ["2020-01", "2020-02", "2020-03", "2020-04", "2020-05",
+                  "2020-06", "2020-07", "2020-08", "2020-09", "2020-10",
+                  "2020-11", "2020-12", "2021-01", "2021-02", "2021-03"]
+        proportions = []
+        for month in months:
+            print(month)
+            path = self.resultsbase + f"/{self.blockchain}/{month}"
+
+            y = np.loadtxt(path + f"/{mtype}/sparse_c.txt",dtype="str")
+            cc = Counter(y)
+            proportion = max([cc[c] for c in np.unique(y)]) / len(y)
+            proportions.append(proportion)
+
+
+        plt.plot(range(len(months)), proportions, marker='o', mfc='black', markersize=self.markersize, lw=self.linewidth)
+
+        plt.xticks(range(len(months)), months, rotation=45, fontsize=self.fontsize_ticks)
+        plt.ylim([0, 1])
+        self.format_plot(title = "Majority NFT class proportion as a function of months",subtitle = "Ethereum blockchain",title_y=self.barplot_title_y,xlabel="Month", ylabel = "Proportion")
+        
+        if save:
+            plt.savefig("{path}/month_plot_baseline_model".format(path=self.store_path))
+        if show:
+            plt.show()
+
+
+
     def get_mcNemar_test(self):
         alpha = 0.05
 
@@ -466,7 +510,7 @@ class ClassicationPlotter(Formatter):
         
 # choose data set to investigate
 blockchain="ETH"
-month="2020-01"
+month="2021-03"
 mtypes=["bi"]
 dims=[3]
 
@@ -474,6 +518,7 @@ for mtype in mtypes:
     for dim in dims:
         #print(mtype,dim)
         cp = ClassicationPlotter(blockchain=blockchain,month=month,mtype=mtype,dim=dim)
+        #cp.make_baseline_model_performance_month_plot(save=True)
         #cp.get_multinomial_results()
         #cp.get_k_nearest_neighbors_results(k=10)
         #cp.train_optimal_k_nearest_neighbors(save=True)
@@ -491,9 +536,10 @@ for mtype in mtypes:
         #cp.make_barplot_test(save=True)
         #cp.make_model_dim_plot(modeltype="multinomial",save=True)
         #cp.make_model_dim_plot(modeltype="KNN",k=10,save=True)
-        cp.make_confusion_matrix("multinomial",save=True)
-        cp.make_confusion_matrix("KNN",k=10,save=True)
+        #cp.make_confusion_matrix("multinomial",save=True)
+        #cp.make_confusion_matrix("KNN",k=10,save=True)
         #cp.make_confusion_matrix("Optimal KNN",save=True)
         #cp.train_optimal_k_nearest_neighbors(save=True)
-        cp.print_baseline_model_performance()
-        #cp.make_month_plot_all(k=10,save=True)
+        #cp.print_baseline_model_performance()
+        cp.make_month_plot_all(k=10,save=True)
+

@@ -40,18 +40,17 @@ path = "./data"
 def get_path(blockchain,month):
     return f"{path}/{blockchain}/{month}"
     
-blockchain = "WAX"
+blockchain = "ETH"
 
 # model parameters
-latent_dims = [2,3]
+latent_dims = [2]
 total_epochs= 1
-n_test_batches = 2
+n_test_batches = 1
 lrs=[0.1]
 # Total independent runs of the model
 total_runs=1
 
-months = ["2020-07","2020-08","2020-09","2020-10",
-          "2020-11","2020-12","2021-01","2021-02","2021-03"]
+months = ["2021-03"]
 
 for month in months:
     dataset = get_path(blockchain,month)

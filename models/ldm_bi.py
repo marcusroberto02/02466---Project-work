@@ -1,4 +1,7 @@
-# HUSK CREDITS!!!
+# The code in this file is inspired by code from:
+# Nikolaos Nakis
+# Abdulkadir Çelikkanat
+# Link: https://github.com/Nicknakis/HBDM
 
 # Import all the packages
 from email.policy import default
@@ -28,7 +31,7 @@ else:
     
 # i corresponds to NFT's
 # j corresponds to traders
-def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batches = 5,lrs=[0.001],total_runs = 1,device=torch.device("cpu")):
+def run_ldm_bi(dataset=None, latent_dims = [2],total_epochs = 10000,n_test_batches = 5,lrs=[0.1],total_runs = 1,device=torch.device("cpu")):
     class LDM_BI(nn.Module):
         def __init__(self,sparse_i,sparse_j,sparse_w,sparse_c,nft_size,trader_size,latent_dim,nft_sample_size,trader_matrix,test_batch_size=500,sparse_i_test=None,sparse_j_test=None,sparse_w_test=None):
             super(LDM_BI, self).__init__()

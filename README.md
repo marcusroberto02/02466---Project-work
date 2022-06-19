@@ -3,7 +3,7 @@
 
 Follow these steps to reproduce the results of this project: 
 
-1. Acquire the full dataset from: osf.io/xnj3k/?view_only=319a53cf1bf542bbbe538aba37916537
+1. Acquire the full dataset from: https://osf.io/wsnzr/
 2. Get partition of the data set for a specific blockchain by running the python file: create_blockchain_dataset.py
 3. Create monthly data:
   - Find the month(s) of interest and run the code: create_monthly_data.py

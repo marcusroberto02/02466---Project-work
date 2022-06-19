@@ -1,5 +1,5 @@
 # NFT Project - DTU 02466 Project Work 
-# By Kasper Helverskov Petersen (s203294), Mads Vibe Ringsted (s204144), Marcus Roberto Nielsen (s204126) and Roneet Vijay Nagale (s204091)
+### By Kasper Helverskov Petersen (s203294), Mads Vibe Ringsted (s204144), Marcus Roberto Nielsen (s204126) and Roneet Vijay Nagale (s204091)
 
 Follow these steps to reproduce the results of this project: 
 

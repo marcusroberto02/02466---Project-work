@@ -1,3 +1,4 @@
+from gc import collect
 from logging import raiseExceptions
 from torch_sparse import remove_diag
 from plot_formatting import Formatter
@@ -36,6 +37,7 @@ class TraderStoryPlotter(Formatter):
 
     # size of points in the trader story plots
     s_big = 1000
+    s_medium = 200
     s_small = 40
 
     # coordinate name
@@ -282,7 +284,7 @@ class TraderStoryPlotter(Formatter):
         # get embeddings
         se = self.r[seller_ids]
         be = self.u[buyer_ids]
-
+        
         # get euclidean distances
         distances = [np.linalg.norm(s-b) for (s,b) in zip(se,be)]
 
@@ -297,7 +299,7 @@ class TraderStoryPlotter(Formatter):
         p = lognorm.pdf(x, shape, loc, scale)
         plt.plot(x, p, 'k', linewidth=self.linewidth)
 
-        title = "Distribution of distances between seller and buyer positions" if not log else "Distribution of log distances between seller and buyer positions"
+        title = "Distribution of distances" if not log else "Distribution of log distances"
         xlabel = "Distance" if not log else "Log distance"
 
         self.format_plot(title=title, subtitle=self.dataname,
@@ -312,25 +314,43 @@ class TraderStoryPlotter(Formatter):
         if show:
             plt.show()
     
-    def make_trader_story_plot_2D(self,d1=1,d2=2,story="random",min_sales=0,min_purchases=0,save=False,show=False):
+    def make_trader_story_plot_2D(self,d1=1,d2=2,story="random",min_sales=0,min_purchases=0,min_dist=0,save=False,show=False):
         if self.l is None or self.r is None or self.u is None:
             self.load_embeddings()
+
+        if self.seller_biases is None or self.buyer_biases is None:
+            self.load_biases()
         
         # only include traders that act as both sellers and buyers
         df = pd.read_csv(self.results_path + "/sellerbuyeridtable.csv")
         seller_ids = df["ei_seller"]
         buyer_ids = df['ei_buyer']
 
+        # get embeddings
+        se = self.r[seller_ids]
+        be = self.u[buyer_ids]
+
+        # get euclidean distances
+        distances = [np.linalg.norm(s-b) for (s,b) in zip(se,be)]
+
         # load sparse matrices to represent each trade
         sparse_i = np.loadtxt(self.results_path + "/train/sparse_i.txt",dtype=int)
         sparse_j = np.loadtxt(self.results_path + "/train/sparse_j.txt",dtype=int)
         sparse_k = np.loadtxt(self.results_path + "/train/sparse_k.txt",dtype=int)
+        sparse_w = np.loadtxt(self.results_path + "/train/sparse_w.txt",dtype=int)
 
         # load categories
         categories = np.loadtxt("./results_final/ETH/2021-03/tri/sparse_c.txt",dtype=str)
 
         # load collections
         collections = np.loadtxt("./results_final/ETH/2021-03/tri/collections.txt",dtype=str)
+
+        # get number of sales and purchases for each trader
+        n_sales = [sum(sparse_w[sparse_j == s]) for s in seller_ids]
+        n_purchases = [sum(sparse_w[sparse_k == b]) for b in buyer_ids]
+        n_sold = 0
+        n_bought = 0
+        dist = 0
 
         # pick trader based on story
         idx_seller = 0
@@ -342,16 +362,22 @@ class TraderStoryPlotter(Formatter):
             idx_buyer = buyer_ids[idx]
         elif story == "most_frequent_seller":
             title = "Trader story plot of the most frequent seller"
-            cj = Counter(sparse_j)
-            sales = [cj[si] for si in seller_ids]
-            idx_seller = seller_ids[np.argmax(sales)]
-            idx_buyer = buyer_ids[np.argmax(sales)]
+            most_frequent_seller = np.argmax(n_sales)
+            idx_seller = seller_ids[most_frequent_seller]
+            idx_buyer = buyer_ids[most_frequent_seller]
+            n_sold = n_sales[most_frequent_seller]
+            n_bought = n_purchases[most_frequent_seller]
+            dist = distances[most_frequent_seller]
+            print(f"\nWallet id for most frequent seller: {df['wallet'].iloc[most_frequent_seller]}")
         elif story == "most_frequent_buyer":
             title = "Trader story plot of the most frequent buyer"
-            ck = Counter(sparse_k)
-            purchases = [ck[bi] for bi in buyer_ids]
-            idx_seller = seller_ids[np.argmax(purchases)]
-            idx_buyer = buyer_ids[np.argmax(purchases)]
+            most_frequent_buyer = np.argmax(n_purchases)
+            idx_seller = seller_ids[most_frequent_buyer]
+            idx_buyer = buyer_ids[most_frequent_buyer]
+            n_sold = n_sales[most_frequent_buyer]
+            n_bought = n_purchases[most_frequent_buyer]
+            dist = distances[most_frequent_buyer]
+            print(f"\nWallet id for most frequent buyer {df['wallet'].iloc[most_frequent_buyer]}")
         elif story == "most_active_trader":
             title = "Trader story plot of the most active trader"
             cj = Counter(sparse_j)
@@ -361,30 +387,21 @@ class TraderStoryPlotter(Formatter):
             idx_buyer = buyer_ids[np.argmax(trades)]
         elif story == "most_versatile_seller":
             title = "Trader story plot of the most versatile seller"
-            ci = -1
+            most_versatile_seller = -1
             cmax = 0
 
             for j,sj in enumerate(seller_ids):
                 sold_nfts = np.unique(sparse_i[sparse_j==sj])
                 dc = len(np.unique([collections[nft] for nft in sold_nfts]))
                 if dc > cmax:
-                    ci = j
+                    most_versatile_seller = j
                     cmax = dc
-            idx_seller = seller_ids[ci]
-            idx_buyer = buyer_ids[ci]
-        elif story == "most_versatile_buyer":
-            title = "Trader story plot of the most versatile buyer"
-            ci = -1
-            cmax = 0
-
-            for k,sk in enumerate(buyer_ids):
-                bought_nfts = np.unique(sparse_i[sparse_k==sk])
-                dc = len(np.unique([collections[nft] for nft in bought_nfts]))
-                if dc > cmax:
-                    ci = k
-                    cmax = dc
-            idx_seller = seller_ids[ci]
-            idx_buyer = buyer_ids[ci]
+            idx_seller = seller_ids[most_versatile_seller]
+            idx_buyer = buyer_ids[most_versatile_seller]
+            n_sold = n_sales[most_versatile_seller]
+            n_bought = n_purchases[most_versatile_seller]
+            #dist = distances[most_versatile_trader]
+            print(f"\nWallet id for most distant trader {df['wallet'].iloc[most_distant_trader]}")
         elif story == "most_distant_trader":
             title = "Trader story plot of the most distant trader"
             # get embeddings
@@ -394,51 +411,133 @@ class TraderStoryPlotter(Formatter):
             # get euclidean distances
             distances = [np.linalg.norm(s-b) for (s,b) in zip(se,be)]
 
-            idx = -1
+            most_distant_trader = -1
             dmax = 0
             min_sales = 5
             min_purchases = 5
             for i, dist in enumerate(distances):
-                sn = len(np.unique(sparse_i[sparse_j==seller_ids[i]]))
-                bn = len(np.unique(sparse_i[sparse_k==buyer_ids[i]]))
+                sn = n_sales[i]
+                bn = n_purchases[i]
                 if dist > dmax and sn >= min_sales and bn >= min_purchases:
                     dmax = dist
-                    idx = i
-            idx_seller = seller_ids[idx]
-            idx_buyer = buyer_ids[idx]
+                    most_distant_trader = i
+            idx_seller = seller_ids[most_distant_trader]
+            idx_buyer = buyer_ids[most_distant_trader]
+            n_sold = n_sales[most_distant_trader]
+            n_bought = n_purchases[most_distant_trader]
+            dist = distances[most_distant_trader]
+            print(f"\nWallet id for most distant trader {df['wallet'].iloc[most_distant_trader]}")
         elif story == "custom_trader":
-            title = "Trader story plot of specific trader"
-            cj = Counter(sparse_j)
-            ck = Counter(sparse_k)
+            title = "Most active trader with distance>25"
             trader_found = False
-            for (si,bi) in zip(seller_ids,buyer_ids):
-                if (cj[si] >= min_sales and ck[bi] >= min_purchases):
-                    idx_seller = si
-                    idx_buyer = bi
-                    trader_found = True
-                    break
+            max_trades = 0
+            custom_trader = 0
+            for i, dist in enumerate(distances):
+                if dist >= min_dist:
+                    if (n_sales[i] + n_purchases[i]) > max_trades:
+                        max_trades = n_sales[i] + n_purchases[i]
+                        custom_trader = i
+                        trader_found = True
             if not trader_found:
                 raise Exception("No trader satifies the given criteria!")
+            idx_seller = seller_ids[custom_trader]
+            idx_buyer = buyer_ids[custom_trader]
+            n_sold = n_sales[custom_trader]
+            n_bought = n_purchases[custom_trader]
+            dist = distances[custom_trader]
+            print(f"\nWallet id for most custom trader {df['wallet'].iloc[custom_trader]}")
+        elif story == "collector_trader":
+            title = "Trader story plot of collector"
+            trader_found = False
+            # determines what defines a collector
+            max_sales = 25
+            min_purchases = 200
+            collector = 0
+            for i in range(len(seller_ids)):
+                if n_sales[i] <= max_sales and n_purchases[i] >= min_purchases:
+                    collector = i
+                    trader_found = True
+            if not trader_found:
+                raise Exception("No trader satifies the given criteria!")
+            idx_seller = seller_ids[collector]
+            idx_buyer = buyer_ids[collector]
+            n_sold = n_sales[collector]
+            n_bought = n_purchases[collector]
+            dist = distances[collector]
+            print(f"\nWallet id for most collector {df['wallet'].iloc[collector]}")
         else:
             raise Exception("Invalid story type!")
 
+        print(f"\nSeller bias: {self.seller_biases[idx_seller]}")
+        print(f"\nBuyer bias: {self.buyer_biases[idx_buyer]}\n")
+
         # get information about the chosen trader
-        sold_nfts = sparse_i[sparse_j==idx_seller]
-        bought_nfts = sparse_i[sparse_k==idx_buyer]
+        sold_nfts = np.unique(sparse_i[sparse_j==idx_seller])
+        bought_nfts = np.unique(sparse_i[sparse_k==idx_buyer])
+        combined_nfts = np.unique(list(set(sold_nfts) & set(bought_nfts)))
+
+        # get unique number categories and collections
+        cats_sold = categories[sold_nfts]
+        unique_cats_sold = np.unique(cats_sold)
+        cols_sold = collections[sold_nfts]
+        unique_cols_sold = np.unique(cols_sold)
+
+        print("\nSold items:")
+        
+        print("\nCategories:")
+
+        for c in unique_cats_sold:
+            s_cat = sold_nfts[cats_sold == c]
+            n_trades = sum([sum(sparse_w[(sparse_i == nft) & (sparse_j == idx_seller)]) for nft in s_cat])
+            print(f"{c}: {n_trades}")
+
+        print("\nCollections:")
+
+        for c in unique_cols_sold:
+            s_col = sold_nfts[cols_sold == c]
+            n_trades = sum([sum(sparse_w[(sparse_i == nft) & (sparse_j == idx_seller)]) for nft in s_col])
+            print(f"{c}: {n_trades}")
+
+        # get unique number categories and categories
+        cats_bought = categories[bought_nfts]
+        unique_cats_bought = np.unique(cats_bought)
+        cols_bought = collections[bought_nfts]
+        unique_cols_bought = np.unique(cols_bought)
+
+        print("\nBought items:")
+
+        print("Categories:")
+
+        for c in unique_cats_bought:
+            b_cat = bought_nfts[cats_bought == c]
+            n_trades = sum([sum(sparse_w[(sparse_i == nft) & (sparse_k == idx_buyer)]) for nft in b_cat])
+            print(f"{c}: {n_trades}")
+        
+        print("\nCollections:")
+
+        for c in unique_cols_bought:
+            b_cols = bought_nfts[cols_bought == c]
+            n_trades = sum([sum(sparse_w[(sparse_i == nft) & (sparse_k == idx_buyer)]) for nft in b_cols])
+            print(f"{c}: {n_trades}")
 
         # initialize figure
         self.fig = plt.figure(figsize=self.figsize)
 
+        s_points = self.s_medium if len(sold_nfts)+len(bought_nfts)-len(combined_nfts) < 100 else self.s_small
+
         # plot sold NFTs
-        plt.scatter(self.l[sold_nfts][:,d1-1],self.l[sold_nfts][:,d2-1], marker="v", s =self.s_small, color = "green", label = "Sold NFTs")
+        plt.scatter(self.l[sold_nfts][:,d1-1],self.l[sold_nfts][:,d2-1], marker="v", s =s_points, color = "green", label = "Sold NFTs")
         # plot bought NFTs
-        plt.scatter(self.l[bought_nfts][:,d1-1],self.l[bought_nfts][:,d2-1], s = self.s_small, color = "red", label = "Bought NFTs")
+        plt.scatter(self.l[bought_nfts][:,d1-1],self.l[bought_nfts][:,d2-1], marker="D",s = s_points, color = "red", label = "Bought NFTs")
+        if len(combined_nfts) > 0:
+            # plot NFTs that have been both sold and bought
+            plt.scatter(self.l[combined_nfts][:,d1-1],self.l[combined_nfts][:,d2-1], s = s_points*2, color = "black", label = "Both sold and bought NFTs")
 
         # plot the seller
         plt.scatter(self.r[idx_seller,d1-1],self.r[idx_seller,d2-1], marker = "X",edgecolor="black",s = self.s_big, color = "purple", label = "Seller location")
         # plot the buyer
         plt.scatter(self.u[idx_buyer,d1-1],self.u[idx_buyer,d2-1], marker="X",edgecolor="black",s=self.s_big, color = "blue", label = "Buyer location")
-        legend = plt.legend(loc="upper right")
+        legend = plt.legend()
         for handle in legend.legendHandles:
             handle.set_sizes([self.legend_symbolsize])
 
@@ -446,7 +545,7 @@ class TraderStoryPlotter(Formatter):
         ylabel = "{c2} coordinate".format(c2=str(d2)+self.csuffix[d2])
 
         # get subtitle
-        subtitle = "Sold items: {nsold}, Bought items: {nbought}\n{dataname}".format(nsold=len(sold_nfts),nbought=len(bought_nfts),dataname=self.dataname)
+        subtitle = "Sold items: {n_sold}, Bought items: {n_bought}, Distance: {dist:.2f}\n{dataname}".format(n_sold=n_sold,n_bought=n_bought,dist=dist,dataname=self.dataname)
 
         self.format_plot(title=title,subtitle=subtitle,title_y=self.fig_title_y_lower,xlabel=xlabel,ylabel=ylabel)
 
@@ -477,10 +576,12 @@ for dim in dims:
     #tsp.make_trader_story_plot_2D(story="most_versatile_seller",save=True)
     #tsp.make_trader_story_plot_2D(story="most_versatile_buyer",save=True)
     #tsp.make_trader_story_plot_2D(story="most_distant_trader",save=True)
-    tsp.make_trader_story_plot_2D(story="most_frequent_seller",save=True)
+    #tsp.make_trader_story_plot_2D(story="most_frequent_seller",save=True)
     #tsp.make_trader_story_plot_2D(story="most_frequent_buyer",save=True)
+    #tsp.make_trader_story_plot_2D(story="most_distant_trader",min_sales=10,min_purchases=10,save=True)
     #tsp.make_trader_story_plot_2D(story="most_active_trader",save=True)
-    #tsp.make_trader_story_plot_2D(story="custom_trader",min_sales=100,min_purchases=100,save=True)
+    tsp.make_trader_story_plot_2D(story="custom_trader",min_dist=25,save=True)
+    tsp.make_trader_story_plot_2D(story="collector_trader",save=True)
     #tsp.make_distances_biases_plot(save=True, normalize = False)
     #tsp.make_distances_biases_plot(save=True, normalize = True)
     

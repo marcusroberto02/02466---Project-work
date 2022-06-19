@@ -73,11 +73,13 @@ print(counts)
 #sparse_i = np.loadtxt("./data/WAX/2020-07/bi/train/sparse_i.txt")
 #sparse_j = np.loadtxt("./data/WAX/2020-07/bi/train/sparse_j.txt")
 
+
+
 #print("hey")
 
 #0x95a08c297ad5861734c4440fd5ac6b80a8bf9228
 
-df = pd.read_csv("./data/ETH/2021-03copy/data_train.csv")
+#df = pd.read_csv("./data/ETH/2021-03copy/data_train.csv")
 
-print("hey")
+#print("hey")
 

@@ -348,7 +348,7 @@ class ClassicationPlotter(Formatter):
         misclassifications = np.sum(y_pred!=self.y_test)
         
         print("\nBaseline model results for the {blockchain}-{month} data set:\n".format(blockchain=self.blockchain,month=self.month))
-
+        print(self.encoder.classes_[majority_class])
         print("Majority class voting accuracy: {accuracy:0.2f}%".format(accuracy=accuracy))
         print("Number of misclassifications for majority voting: {nwrong} out of {ntotal}".format(nwrong=misclassifications,ntotal=len(self.y_test)))
     
@@ -400,7 +400,7 @@ class ClassicationPlotter(Formatter):
         X_train_tri, X_test_tri, y_train_tri, y_test_tri = train_test_split(X_tri, y, test_size=0.2, stratify=y,
                                                                         random_state=42)
 
-        print("check of tran and test for bi and tri")
+        print("check of train and test for bi and tri")
         print(sum(y_train_bi==y_train_tri) == len(y_train_bi))
 
         #### get KNN BI and TRI
@@ -541,5 +541,5 @@ for mtype in mtypes:
         #cp.make_confusion_matrix("Optimal KNN",save=True)
         #cp.train_optimal_k_nearest_neighbors(save=True)
         #cp.print_baseline_model_performance()
-        cp.make_month_plot_all(k=10,save=True)
-
+        #cp.make_month_plot_all(k=10,save=True)
+        cp.get_mcNemar_test()
